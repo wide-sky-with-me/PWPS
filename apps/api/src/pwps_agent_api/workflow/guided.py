@@ -32,6 +32,8 @@ from pwps_agent_api.schemas import (
     SourceType,
     WorkflowState,
 )
+from pwps_agent_api.skills.field_planning import FieldPlanningSkill
+from pwps_agent_api.skills.override_evaluation import OverrideEvaluationSkill
 from pwps_agent_api.skills.requirement_understanding import RequirementUnderstandingSkill
 from pwps_agent_api.workflow.common import (
     commit_decision,
@@ -104,6 +106,29 @@ async def start_guided_draft(
     state.target_queue = registry.confirmation_queue()
     trace(state, "build_confirmation_queue", f"Built {len(state.target_queue)} target(s).")
 
+    # Generate retrieval plans for field groups
+    planning_skill = FieldPlanningSkill()
+    field_specs = {name: registry.get_field(name) for name in registry.fields}
+    for target in state.target_queue:
+        plan = await planning_skill.run(
+            target_fields=target.fields,
+            field_specs=field_specs,
+            field_states=state.field_states,
+            domain=domain,
+        )
+        trace(
+            state,
+            "plan_field_retrieval",
+            f"Generated retrieval plan for {target.group_name}.",
+            {"group": target.group_name, "targets": len(plan.targets)},
+        )
+    record_skill_call(
+        state,
+        skill_name=planning_skill.skill_name,
+        skill_version=planning_skill.skill_version,
+        prompt_version=planning_skill.prompt_version,
+    )
+
     actor = HumanDecisionActor()
     pending = await actor.build_pending_decision(state, state.target_queue[0], registry)
     return GuidedDraftCheckpoint(state=state, pending_decision=pending, output_paths={})
@@ -135,6 +160,40 @@ async def resume_guided_draft(
         domain: Domain pack. If None, loads the default welding domain.
     """
     domain, registry = _resolve_domain_and_registry(domain)
+
+    # Evaluate overrides before committing (log only, don't reject)
+    if decision_type is DecisionType.OVERRIDE:
+        override_skill = OverrideEvaluationSkill()
+        for field_name, value in selected_values.items():
+            if field_name not in pending.target_fields:
+                continue
+            original_value = pending.recommended.get(field_name)
+            evaluation = await override_skill.run(
+                field_name=field_name,
+                override_value=str(value),
+                original_value=str(original_value) if original_value is not None else None,
+                field_states=state.field_states,
+                domain=domain,
+            )
+            record_skill_call(
+                state,
+                skill_name=override_skill.skill_name,
+                skill_version=override_skill.skill_version,
+                prompt_version=override_skill.prompt_version,
+            )
+            trace(
+                state,
+                "override_evaluation",
+                f"Override evaluation for {field_name}: {evaluation.recommendation}",
+                {
+                    "field": field_name,
+                    "is_safe": evaluation.is_safe,
+                    "risk_level": evaluation.risk_level,
+                    "recommendation": evaluation.recommendation,
+                    "conflicts": evaluation.conflicts,
+                },
+            )
+
     _commit_user_decision(
         state,
         pending,
@@ -206,7 +265,15 @@ async def resume_guided_draft(
 
     state.status = RunStatus.FINALIZING
     trace(state, "finalize_output", "Writing Guided Draft JSON outputs.")
-    bundle = JsonOutputBuilder().write(state, output_dir / state.run_id)
+
+    builder = JsonOutputBuilder()
+    if domain is not None:
+        bundle = await builder.write_with_llm_summaries(
+            state, output_dir / state.run_id, domain
+        )
+    else:
+        bundle = builder.write(state, output_dir / state.run_id)
+
     state.status = RunStatus.FINISHED
     state.current_target = None
     state.current_discussion_id = None

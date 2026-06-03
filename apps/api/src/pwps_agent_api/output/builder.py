@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pwps_agent_api.core.config import get_settings
+from pwps_agent_api.domain.spec import DomainSpec
 from pwps_agent_api.schemas import WorkflowState
 
 
@@ -19,6 +21,63 @@ class JsonOutputBuilder:
             "field_report": _build_field_report(state),
             "evidence_report": _build_evidence_report(state),
             "risk_report": _build_risk_report(state),
+            "discussion_trace": _build_discussion_trace(state),
+            "render_payload": _build_render_payload(state),
+        }
+        output_paths: dict[str, Path] = {}
+        for name, payload in payloads.items():
+            path = output_dir / f"{name}.json"
+            path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )
+            output_paths[name] = path
+        return OutputBundle(output_paths=output_paths)
+
+    async def write_with_llm_summaries(
+        self, state: WorkflowState, output_dir: Path, domain: DomainSpec | None = None
+    ) -> OutputBundle:
+        """Write outputs with LLM-generated summaries when available."""
+        from pwps_agent_api.skills.field_summary import FieldSummarySkill
+        from pwps_agent_api.skills.risk_summary import RiskSummarySkill
+
+        settings = get_settings()
+        use_llm = settings.llm_api_key and domain is not None
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build base payloads
+        field_report = _build_field_report(state)
+        risk_report = _build_risk_report(state)
+
+        # Enhance with LLM summaries if available
+        if use_llm:
+            field_summary_skill = FieldSummarySkill()
+            risk_summary_skill = RiskSummarySkill()
+
+            field_summary = await field_summary_skill.run(
+                field_states=state.field_states,
+                domain=domain,
+            )
+            field_report["llm_summary"] = field_summary.summary
+            field_report["highlights"] = field_summary.highlights
+
+            if state.audit_result:
+                risk_summary = await risk_summary_skill.run(
+                    audit_result=state.audit_result,
+                    field_states=state.field_states,
+                    domain=domain,
+                )
+                risk_report["llm_summary"] = risk_summary.summary
+                risk_report["risk_items"] = [
+                    item.model_dump(mode="json") for item in risk_summary.risks
+                ]
+
+        payloads = {
+            "pwps": _build_pwps_payload(state),
+            "field_report": field_report,
+            "evidence_report": _build_evidence_report(state),
+            "risk_report": risk_report,
             "discussion_trace": _build_discussion_trace(state),
             "render_payload": _build_render_payload(state),
         }

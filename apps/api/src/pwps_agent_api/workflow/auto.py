@@ -33,6 +33,7 @@ from pwps_agent_api.schemas import (
     WorkflowState,
 )
 from pwps_agent_api.skills.candidate_generation import CandidateGenerationSkill
+from pwps_agent_api.skills.field_planning import FieldPlanningSkill
 from pwps_agent_api.skills.requirement_understanding import RequirementUnderstandingSkill
 from pwps_agent_api.workflow.common import (
     commit_decision,
@@ -106,10 +107,10 @@ def _build_auto_graph(registry: FieldRegistry, domain: DomainSpec | None = None)
     graph.add_node("normalize_input", _normalize_input)
     graph.add_node("understand_requirement", _understand_requirement(registry, domain))  # type: ignore[arg-type]
     graph.add_node("select_mode", _select_mode)
-    graph.add_node("build_confirmation_queue", _build_confirmation_queue(registry))  # type: ignore[arg-type]
+    graph.add_node("build_confirmation_queue", _build_confirmation_queue(registry, domain))  # type: ignore[arg-type]
     graph.add_node("confirm_target_subgraph", _confirm_all_targets(registry, domain))  # type: ignore[arg-type]
     graph.add_node("global_audit", _global_audit(registry, domain))  # type: ignore[arg-type]
-    graph.add_node("finalize_output", _finalize_output)
+    graph.add_node("finalize_output", _finalize_output(domain))  # type: ignore[arg-type]
 
     graph.add_edge(START, "normalize_input")
     graph.add_edge("normalize_input", "understand_requirement")
@@ -193,7 +194,10 @@ async def _select_mode(state: AutoGraphState) -> AutoGraphState:
 
 def _build_confirmation_queue(
     registry: FieldRegistry,
+    domain: DomainSpec | None = None,
 ) -> Callable[[AutoGraphState], Any]:
+    planning_skill = FieldPlanningSkill()
+
     async def node(state: AutoGraphState) -> AutoGraphState:
         workflow_state = WorkflowState.model_validate(state["workflow_state"])
         workflow_state.status = RunStatus.FIELD_CONFIRMING
@@ -203,6 +207,29 @@ def _build_confirmation_queue(
             "build_confirmation_queue",
             f"Built {len(workflow_state.target_queue)} field group target(s).",
         )
+
+        # Generate retrieval plans for field groups
+        field_specs = {name: registry.get_field(name) for name in registry.fields}
+        for target in workflow_state.target_queue:
+            plan = await planning_skill.run(
+                target_fields=target.fields,
+                field_specs=field_specs,
+                field_states=workflow_state.field_states,
+                domain=domain,
+            )
+            trace(
+                workflow_state,
+                "plan_field_retrieval",
+                f"Generated retrieval plan for {target.group_name}.",
+                {"group": target.group_name, "targets": len(plan.targets)},
+            )
+        record_skill_call(
+            workflow_state,
+            skill_name=planning_skill.skill_name,
+            skill_version=planning_skill.skill_version,
+            prompt_version=planning_skill.prompt_version,
+        )
+
         return {"workflow_state": workflow_state.model_dump(mode="json")}
 
     return node
@@ -347,14 +374,27 @@ def _global_audit(
     return node
 
 
-async def _finalize_output(state: AutoGraphState) -> AutoGraphState:
-    workflow_state = WorkflowState.model_validate(state["workflow_state"])
-    workflow_state.status = RunStatus.FINALIZING
-    trace(workflow_state, "finalize_output", "Writing structured JSON outputs.")
-    bundle = JsonOutputBuilder().write(workflow_state, Path(state["output_dir"]))
-    workflow_state.status = RunStatus.FINISHED
-    trace(workflow_state, "finalize_output", "Auto Draft output complete.")
-    return {
-        "workflow_state": workflow_state.model_dump(mode="json"),
-        "output_paths": {name: str(path) for name, path in bundle.output_paths.items()},
-    }
+def _finalize_output(
+    domain: DomainSpec | None = None,
+) -> Callable[[AutoGraphState], Any]:
+    async def node(state: AutoGraphState) -> AutoGraphState:
+        workflow_state = WorkflowState.model_validate(state["workflow_state"])
+        workflow_state.status = RunStatus.FINALIZING
+        trace(workflow_state, "finalize_output", "Writing structured JSON outputs.")
+
+        builder = JsonOutputBuilder()
+        if domain is not None:
+            bundle = await builder.write_with_llm_summaries(
+                workflow_state, Path(state["output_dir"]), domain
+            )
+        else:
+            bundle = builder.write(workflow_state, Path(state["output_dir"]))
+
+        workflow_state.status = RunStatus.FINISHED
+        trace(workflow_state, "finalize_output", "Auto Draft output complete.")
+        return {
+            "workflow_state": workflow_state.model_dump(mode="json"),
+            "output_paths": {name: str(path) for name, path in bundle.output_paths.items()},
+        }
+
+    return node

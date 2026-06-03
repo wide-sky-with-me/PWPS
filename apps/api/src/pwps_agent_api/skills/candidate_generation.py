@@ -18,6 +18,7 @@ from pwps_agent_api.core.config import get_settings
 from pwps_agent_api.core.llm import get_chat_model
 from pwps_agent_api.domain.spec import DomainSpec
 from pwps_agent_api.fields import FieldRegistry
+from pwps_agent_api.guard import GuardValidator
 from pwps_agent_api.schemas import Evidence, FieldState, FieldStatus, InferencePolicy
 
 CandidateBundle = dict[str, list[dict[str, Any]]]
@@ -112,18 +113,21 @@ class CandidateGenerationSkill:
 
         settings = get_settings()
         if not settings.llm_api_key:
-            return self._fallback_generate(
+            candidates = self._fallback_generate(
                 fields_needing_candidates, evidence, registry, default_prior
             )
+        else:
+            # Resolve prompt from domain pack
+            prompt = domain.get_prompt("candidate_generation") if domain else None
+            if prompt is None:
+                prompt = _DEFAULT_PROMPT
 
-        # Resolve prompt from domain pack
-        prompt = domain.get_prompt("candidate_generation") if domain else None
-        if prompt is None:
-            prompt = _DEFAULT_PROMPT
+            candidates = await self._llm_generate(
+                fields_needing_candidates, field_states, evidence, registry, prompt
+            )
 
-        return await self._llm_generate(
-            fields_needing_candidates, field_states, evidence, registry, prompt
-        )
+        # Filter invalid candidates using GuardValidator
+        return self._filter_invalid_candidates(candidates, registry)
 
     def _fields_needing_candidates(
         self,
@@ -141,6 +145,29 @@ class CandidateGenerationSkill:
             elif field_states[field_name].status is FieldStatus.NEEDS_REPAIR:
                 result.append(field_name)
         return result
+
+    def _filter_invalid_candidates(
+        self,
+        candidates: CandidateBundle,
+        registry: FieldRegistry,
+    ) -> CandidateBundle:
+        """Filter out invalid candidates using GuardValidator."""
+        guard = GuardValidator()
+        filtered: CandidateBundle = {}
+
+        for field_name, field_candidates in candidates.items():
+            spec = registry.get_field(field_name)
+            valid_candidates = []
+            for candidate in field_candidates:
+                violations = guard.validate_candidate(field_name, candidate, spec)
+                # Only keep candidates without error-level violations
+                has_errors = any(v.severity == "error" for v in violations)
+                if not has_errors:
+                    valid_candidates.append(candidate)
+            if valid_candidates:
+                filtered[field_name] = valid_candidates
+
+        return filtered
 
     def _fallback_generate(
         self,
