@@ -30,10 +30,10 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 
-# CORS — allow frontend origin
+# CORS — allow frontend origin (configurable via CORS_ORIGINS env var)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=get_settings().cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

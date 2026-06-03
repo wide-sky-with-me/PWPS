@@ -34,19 +34,20 @@ class Reranker:
 
         try:
             documents = [hit.content for hit in hits]
-            resp = httpx.post(
-                f"{s.reranker_base_url}/rerank",
-                json={
-                    "model": s.reranker_model,
-                    "query": query,
-                    "documents": documents,
-                    "top_n": min(self.top_n, len(hits)),
-                },
-                headers={"Authorization": f"Bearer {s.reranker_api_key}"},
-                timeout=15,
-            )
-            resp.raise_for_status()
-            results = resp.json().get("results", [])
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{s.reranker_base_url}/rerank",
+                    json={
+                        "model": s.reranker_model,
+                        "query": query,
+                        "documents": documents,
+                        "top_n": min(self.top_n, len(hits)),
+                    },
+                    headers={"Authorization": f"Bearer {s.reranker_api_key}"},
+                    timeout=15,
+                )
+                resp.raise_for_status()
+                results = resp.json().get("results", [])
         except Exception:
             log.debug("Reranker API failed, returning original order", exc_info=True)
             return hits[: self.top_n]

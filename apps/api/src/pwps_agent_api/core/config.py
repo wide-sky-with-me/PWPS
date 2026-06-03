@@ -36,6 +36,9 @@ class Settings:
     # Milvus
     milvus_uri: str
 
+    # CORS
+    cors_origins: list[str]
+
 
 def get_settings() -> Settings:
     return Settings(
@@ -61,4 +64,9 @@ def get_settings() -> Settings:
         reranker_model=os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3"),
         # Milvus
         milvus_uri=os.getenv("MILVUS_URI", "http://localhost:19530"),
+        # CORS
+        cors_origins=os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(","),
     )

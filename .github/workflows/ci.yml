@@ -73,6 +73,10 @@ jobs:
         working-directory: apps/web
         run: pnpm lint
 
+      - name: Run tests
+        working-directory: apps/web
+        run: pnpm test
+
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
@@ -85,4 +89,4 @@ jobs:
         run: docker build -t pwps-api ./apps/api
 
       - name: Build Web image
-        run: docker build -t pwps-web ./apps/web
+        run: docker build -t pwps-web -f apps/web/Dockerfile .

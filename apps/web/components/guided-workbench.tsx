@@ -10,7 +10,6 @@ import {
   LoaderCircle,
   Play,
   RotateCcw,
-  Search,
   ShieldAlert,
 } from "lucide-react";
 import { useMemo, useState } from "react";

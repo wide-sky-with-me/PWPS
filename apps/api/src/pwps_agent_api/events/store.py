@@ -1,10 +1,22 @@
 import json
 from typing import Protocol
 
-from redis.asyncio import Redis
+from redis.asyncio import ConnectionPool, Redis
 
 from pwps_agent_api.core.config import get_settings
 from pwps_agent_api.schemas import TraceEvent
+
+# Singleton connection pool for Redis
+_redis_pool: ConnectionPool | None = None
+
+
+def _get_redis_pool() -> ConnectionPool:
+    global _redis_pool
+    if _redis_pool is None:
+        _redis_pool = ConnectionPool.from_url(
+            get_settings().redis_url, decode_responses=False
+        )
+    return _redis_pool
 
 
 class EventStore(Protocol):
@@ -40,7 +52,7 @@ class RedisEventStore:
 
 
 def get_event_store() -> EventStore:
-    redis = Redis.from_url(get_settings().redis_url, decode_responses=False)
+    redis = Redis(connection_pool=_get_redis_pool())
     return RedisEventStore(redis)
 
 

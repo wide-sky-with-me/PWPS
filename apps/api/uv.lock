@@ -1418,6 +1418,7 @@ dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
     { name = "langchain-deepseek" },
     { name = "langchain-milvus" },
     { name = "langchain-openai" },
@@ -1435,7 +1436,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1448,6 +1448,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.16.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.116.0" },
+    { name = "httpx", specifier = ">=0.28.0" },
     { name = "langchain-deepseek", specifier = ">=1.0.1" },
     { name = "langchain-milvus", specifier = ">=0.3.3" },
     { name = "langchain-openai", specifier = ">=1.2.2" },
@@ -1465,7 +1466,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.0" },
     { name = "mypy", specifier = ">=1.16.0" },
     { name = "pytest", specifier = ">=8.4.0" },
     { name = "pytest-asyncio", specifier = ">=1.4.0" },

@@ -5,19 +5,20 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /app
 
-# Copy dependency files first for layer caching
-COPY package.json pnpm-lock.yaml ./
+# Copy monorepo root dependency files for layer caching
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json apps/web/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy application code
-COPY . .
+COPY apps/web/ apps/web/
 
 # Build the application
-RUN pnpm build
+RUN pnpm --filter web build
 
 EXPOSE 3000
 
 # Run the application
-CMD ["pnpm", "start"]
+CMD ["pnpm", "--filter", "web", "start"]
