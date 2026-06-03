@@ -82,24 +82,12 @@ class AuditEngine:
         evidence_store: dict[str, Evidence] | None = None,
         domain: DomainSpec | None = None,
     ) -> AuditResult:
-        """Run audit — uses LLM if available, falls back to deterministic."""
-        settings = get_settings()
-        if settings.llm_api_key and domain is not None:
-            # LLM mode: deep reasoning with knowledge retrieval
-            import asyncio
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # If we're already in an async context, we can't use asyncio.run
-                    # Fall back to deterministic mode
-                    return self._deterministic_audit(field_states, registry, evidence_store)
-                return asyncio.run(
-                    self._llm_audit(field_states, registry, evidence_store or {}, domain)
-                )
-            except Exception:
-                return self._deterministic_audit(field_states, registry, evidence_store)
+        """Run deterministic audit (sync).
 
-        # Deterministic mode: fast rule-based checks
+        For LLM-powered audit, use async_audit() instead.
+        This method always uses deterministic rules for compatibility
+        with sync callers.
+        """
         return self._deterministic_audit(field_states, registry, evidence_store)
 
     async def async_audit(
