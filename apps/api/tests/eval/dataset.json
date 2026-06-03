@@ -1,0 +1,131 @@
+[
+  {
+    "id": "normal-gmaw-q345r",
+    "description": "Normal GMAW case with complete parameters",
+    "input": "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "thickness": "12mm",
+      "welding_process": "GMAW",
+      "joint_type": "对接焊",
+      "welding_position": "平焊"
+    },
+    "expected_audit_issues": ["high_risk_auto_confirmation"],
+    "expected_publishability": "needs_confirmation",
+    "category": "normal"
+  },
+  {
+    "id": "missing-thickness",
+    "description": "User does not provide thickness",
+    "input": "Q345R，GMAW，平焊，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "welding_process": "GMAW",
+      "welding_position": "平焊"
+    },
+    "expected_audit_issues": ["required_field_completeness"],
+    "expected_publishability": "needs_confirmation",
+    "category": "missing_field"
+  },
+  {
+    "id": "gmaw-j422-conflict",
+    "description": "GMAW with J422 electrode - hard conflict",
+    "input": "Q345R，12mm，对接焊，平焊，GMAW，焊材用J422，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "welding_process": "GMAW",
+      "consumable": "J422"
+    },
+    "expected_audit_issues": ["process_consumable_match"],
+    "expected_publishability": "reference_only",
+    "category": "conflict"
+  },
+  {
+    "id": "smaw-j422-valid",
+    "description": "SMAW with J422 electrode - valid combination",
+    "input": "Q345R，12mm，对接焊，平焊，SMAW，焊材用J422，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "welding_process": "SMAW"
+    },
+    "expected_audit_issues": [],
+    "expected_publishability": "draft_publishable",
+    "category": "normal",
+    "note": "consumable extraction depends on LLM; regex fallback may not extract it"
+  },
+  {
+    "id": "high-risk-thermal",
+    "description": "High-risk thermal fields require human confirmation",
+    "input": "Q345R，30mm，对接焊，平焊，GMAW，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "thickness": "30mm",
+      "welding_process": "GMAW"
+    },
+    "expected_audit_issues": ["high_risk_auto_confirmation", "low_credibility_evidence"],
+    "expected_publishability": "needs_confirmation",
+    "category": "high_risk"
+  },
+  {
+    "id": "meta-fabrication-risk",
+    "description": "Metadata fields should not be fabricated by model",
+    "input": "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草案",
+    "expected_fields": {
+      "project_name": null,
+      "client_name": null,
+      "document_number": null
+    },
+    "expected_audit_issues": [],
+    "expected_publishability": "needs_confirmation",
+    "category": "fabrication_risk"
+  },
+  {
+    "id": "user-override-consumable",
+    "description": "User overrides consumable to a different value",
+    "input": "Q345R，12mm，对接焊，平焊，GMAW，焊材用ER50-6，生成 pWPS 草案",
+    "expected_fields": {
+      "consumable": "ER50-6"
+    },
+    "expected_audit_issues": [],
+    "expected_publishability": "needs_confirmation",
+    "category": "user_override"
+  },
+  {
+    "id": "gtaw-process",
+    "description": "GTAW (TIG) welding process",
+    "input": "Q345R，6mm，对接焊，平焊，GTAW，生成 pWPS 草案",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "thickness": "6mm",
+      "welding_process": "GTAW"
+    },
+    "expected_audit_issues": ["high_risk_auto_confirmation"],
+    "expected_publishability": "needs_confirmation",
+    "category": "normal"
+  },
+  {
+    "id": "english-input",
+    "description": "English language input",
+    "input": "Q345R, 12mm, butt joint, flat position, GMAW, generate pWPS draft",
+    "expected_fields": {
+      "base_material": "Q345R",
+      "thickness": "12mm",
+      "welding_process": "GMAW"
+    },
+    "expected_audit_issues": ["high_risk_auto_confirmation"],
+    "expected_publishability": "needs_confirmation",
+    "category": "normal"
+  },
+  {
+    "id": "minimal-input",
+    "description": "Minimal input with only material and process",
+    "input": "Q235B，SMAW",
+    "expected_fields": {
+      "base_material": "Q235B",
+      "welding_process": "SMAW"
+    },
+    "expected_audit_issues": ["required_field_completeness"],
+    "expected_publishability": "needs_confirmation",
+    "category": "missing_field"
+  }
+]

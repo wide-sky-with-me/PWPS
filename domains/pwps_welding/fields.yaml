@@ -1,0 +1,260 @@
+# pWPS Welding Domain — Field Definitions
+# Extracted from fields/registry.py
+
+fields:
+  base_material:
+    label: 母材
+    group: basic_condition_group
+    field_type: string
+    description: "Base material or material grade provided by the user."
+    required_for_start: true
+    affects: [consumable, preheat_temperature, pwht]
+    output_section: base_material
+    examples: [Q345R, Q235B]
+
+  thickness:
+    label: 厚度
+    group: basic_condition_group
+    field_type: dimension
+    description: "Base material thickness for the joint."
+    unit: mm
+    required_for_start: true
+    affects: [current_range, voltage_range, travel_speed, heat_input]
+    output_section: base_material
+    examples: ["12mm"]
+
+  welding_process:
+    label: 焊法
+    group: basic_condition_group
+    field_type: enum
+    description: "Welding process used for the draft."
+    enum_values: [GMAW, SMAW, GTAW, SAW]
+    required_for_start: true
+    affects: [consumable, shielding_gas, polarity]
+    output_section: process
+    audit_rules: [process_consumable_match]
+    examples: [GMAW]
+
+  joint_type:
+    label: 接头形式
+    group: basic_condition_group
+    field_type: string
+    description: "Joint type such as butt joint or fillet joint."
+    required_for_start: true
+    output_section: joint
+    examples: [对接焊]
+
+  welding_position:
+    label: 焊接位置
+    group: basic_condition_group
+    field_type: enum
+    description: "Welding position used for the draft."
+    enum_values: [flat, horizontal, vertical, overhead]
+    required_for_start: true
+    output_section: position
+    examples: [平焊]
+
+  consumable:
+    label: 焊材
+    group: consumable_group
+    field_type: string
+    description: "Welding consumable or filler metal."
+    high_risk: true
+    dependencies: [base_material, welding_process]
+    affects: [current_range, voltage_range]
+    audit_rules: [process_consumable_match]
+    candidate_strategy: match_process_and_material
+    output_section: consumable
+    examples: [ER50-6]
+
+  consumable_specification:
+    label: 焊材规格
+    group: consumable_group
+    field_type: dimension
+    description: "Consumable diameter or specification."
+    unit: mm
+    dependencies: [consumable, welding_process]
+    affects: [current_range, voltage_range]
+    output_section: consumable
+    examples: ["1.2mm"]
+
+  shielding_gas:
+    label: 保护气体
+    group: consumable_group
+    field_type: string
+    description: "Shielding gas for processes that require it."
+    dependencies: [welding_process]
+    output_section: consumable
+    examples: [Ar+CO2]
+
+  current_range:
+    label: 电流
+    group: parameter_group
+    field_type: range
+    description: "Recommended welding current range."
+    unit: A
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [thickness, welding_process, consumable_specification]
+    affects: [heat_input]
+    audit_rules: [parameter_completeness, heat_input_consistency]
+    output_section: parameters
+
+  voltage_range:
+    label: 电压
+    group: parameter_group
+    field_type: range
+    description: "Recommended welding voltage range."
+    unit: V
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [welding_process, consumable_specification]
+    affects: [heat_input]
+    audit_rules: [parameter_completeness, heat_input_consistency]
+    output_section: parameters
+
+  travel_speed:
+    label: 焊接速度
+    group: parameter_group
+    field_type: range
+    description: "Recommended travel speed range."
+    unit: cm/min
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [welding_process, thickness]
+    affects: [heat_input]
+    audit_rules: [parameter_completeness, heat_input_consistency]
+    output_section: parameters
+
+  heat_input:
+    label: 热输入
+    group: parameter_group
+    field_type: range
+    description: "Derived heat input range."
+    unit: kJ/mm
+    high_risk: true
+    inference_policy: derived
+    confirmation_policy: always_confirm
+    dependencies: [current_range, voltage_range, travel_speed]
+    audit_rules: [heat_input_consistency]
+    output_section: parameters
+
+  polarity:
+    label: 极性
+    group: parameter_group
+    field_type: string
+    description: "Welding current polarity."
+    dependencies: [welding_process, consumable]
+    output_section: parameters
+
+  preheat_temperature:
+    label: 预热温度
+    group: thermal_group
+    field_type: temperature
+    description: "Preheat temperature requirement."
+    unit: degC
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [base_material, thickness]
+    audit_rules: [thermal_evidence_required]
+    output_section: thermal
+
+  interpass_temperature:
+    label: 层间温度
+    group: thermal_group
+    field_type: temperature
+    description: "Maximum or controlled interpass temperature."
+    unit: degC
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [base_material, thickness, welding_process]
+    audit_rules: [thermal_evidence_required]
+    output_section: thermal
+
+  pwht:
+    label: 焊后热处理
+    group: thermal_group
+    field_type: text
+    description: "Post-weld heat treatment requirement or restriction."
+    high_risk: true
+    inference_policy: evidence_required
+    confirmation_policy: always_confirm
+    dependencies: [base_material, thickness]
+    audit_rules: [thermal_evidence_required]
+    output_section: thermal
+
+  project_name:
+    label: 项目名称
+    group: meta_group
+    field_type: string
+    description: "Project name. The model must not invent this value."
+    required_for_draft: false
+    inference_policy: provided_only
+    confirmation_policy: never_infer
+    output_section: meta
+
+  client_name:
+    label: 客户名称
+    group: meta_group
+    field_type: string
+    description: "Client name. The model must not invent this value."
+    required_for_draft: false
+    inference_policy: provided_only
+    confirmation_policy: never_infer
+    output_section: meta
+
+  document_number:
+    label: 文件编号
+    group: meta_group
+    field_type: string
+    description: "Document number. The model must not invent this value."
+    required_for_draft: false
+    inference_policy: provided_only
+    confirmation_policy: never_infer
+    output_section: meta
+
+groups:
+  basic_condition_group:
+    label: 基础条件
+    description: "Confirm base material, thickness, welding process, joint type, and position."
+    fields: [base_material, thickness, welding_process, joint_type, welding_position]
+    required_fields: [base_material, thickness, welding_process, joint_type, welding_position]
+    confirmation_order: 10
+
+  consumable_group:
+    label: 焊材与保护
+    description: "Confirm consumable, consumable specification, and shielding gas."
+    fields: [consumable, consumable_specification, shielding_gas]
+    required_fields: [consumable]
+    optional_fields: [consumable_specification, shielding_gas]
+    depends_on_groups: [basic_condition_group]
+    confirmation_order: 20
+
+  parameter_group:
+    label: 焊接参数
+    description: "Confirm current, voltage, travel speed, heat input, and polarity."
+    fields: [current_range, voltage_range, travel_speed, heat_input, polarity]
+    required_fields: [current_range, voltage_range, travel_speed]
+    optional_fields: [heat_input, polarity]
+    depends_on_groups: [basic_condition_group, consumable_group]
+    confirmation_order: 30
+
+  thermal_group:
+    label: 热过程
+    description: "Confirm preheat, interpass temperature, and post-weld heat treatment."
+    fields: [preheat_temperature, interpass_temperature, pwht]
+    optional_fields: [preheat_temperature, interpass_temperature, pwht]
+    depends_on_groups: [basic_condition_group]
+    confirmation_order: 40
+
+  meta_group:
+    label: 文档元信息
+    description: "Record user-provided metadata without model inference."
+    fields: [project_name, client_name, document_number]
+    optional_fields: [project_name, client_name, document_number]
+    confirmation_order: 50

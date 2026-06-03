@@ -1,0 +1,67 @@
+# pWPS Welding Domain — Default Prior Values
+# Soft fallback values when knowledge retrieval returns no results.
+# All values are marked with low confidence (source_type=MODEL_PRIOR, credibility=0.35)
+# and flagged for human review.
+
+consumable:
+  value: ER50-6
+  confidence: 0.35
+  reason: "Common GMAW consumable for low-carbon steel; requires verification against specific material and standard."
+
+consumable_specification:
+  value: "1.2mm"
+  confidence: 0.35
+  reason: "Common wire diameter for GMAW; depends on material thickness and current range."
+
+shielding_gas:
+  value: Ar+CO2
+  confidence: 0.35
+  reason: "Standard mixed gas for GMAW; 80%Ar+20%CO2 is most common."
+
+current_range:
+  value:
+    min: "180A"
+    max: "240A"
+  confidence: 0.35
+  reason: "Typical range for 12mm carbon steel GMAW; depends on joint type, position, and consumable."
+
+voltage_range:
+  value:
+    min: "22V"
+    max: "28V"
+  confidence: 0.35
+  reason: "Typical range for GMAW spray transfer; depends on wire speed and gas mixture."
+
+travel_speed:
+  value:
+    min: "25cm/min"
+    max: "35cm/min"
+  confidence: 0.35
+  reason: "Typical range for GMAW; depends on joint geometry and position."
+
+heat_input:
+  value:
+    min: "0.8kJ/mm"
+    max: "1.6kJ/mm"
+  confidence: 0.35
+  reason: "Derived from typical current/voltage/speed; verify against standard requirements."
+
+polarity:
+  value: DCEP
+  confidence: 0.35
+  reason: "Standard polarity for GMAW; SMAW may use AC or DCEP depending on electrode."
+
+preheat_temperature:
+  value: "not required for thin plate"
+  confidence: 0.35
+  reason: "Preheat depends on material, thickness, and carbon equivalent. Verify with NB/T 47015 or applicable standard."
+
+interpass_temperature:
+  value: "max 250°C"
+  confidence: 0.35
+  reason: "Common interpass limit for carbon steel; verify with applicable standard."
+
+pwht:
+  value: "not specified by model prior"
+  confidence: 0.35
+  reason: "PWHT depends on material, thickness, and applicable standard. Requires explicit determination."

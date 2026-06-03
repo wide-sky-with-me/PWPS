@@ -1,0 +1,92 @@
+[
+  {
+    "source_type": "local_document",
+    "source_id": "bundled-gmaw-drafting-reference",
+    "title": "GMAW welding parameters for carbon steel",
+    "source_ref": "local://bundled/gmaw-drafting-reference",
+    "section_path": ["GMAW", "Q345R drafting example"],
+    "content": "For GMAW (MIG/MAG) on Q345R carbon steel: ER50-6 wire, 1.2mm diameter, Ar+CO2 (80/20) shielding gas, DCEP polarity. Current range 180-240A, voltage 22-28V, travel speed 25-35 cm/min, heat input 0.8-1.6 kJ/mm. Wire feed speed should be matched to current setting.",
+    "target_fields": ["consumable", "consumable_specification", "shielding_gas", "current_range", "voltage_range", "travel_speed", "heat_input", "polarity"],
+    "limitations": "Reference values for typical Q345R GMAW applications. Confirm against governing standard and project-specific PQR."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "gmaw-gas-selection",
+    "title": "GMAW shielding gas selection guide",
+    "source_ref": "local://standards/gmaw-gas",
+    "section_path": ["GMAW", "Shielding gas"],
+    "content": "GMAW shielding gas selection: For carbon steel, use Ar+CO2 (75-95% Ar, balance CO2). Pure CO2 is also acceptable but produces more spatter. For stainless steel, use Ar+CO2 (98/2) or Ar+O2 (99/1). Never use Ar+CO2 mixtures designed for SMAW with GMAW process.",
+    "target_fields": ["shielding_gas", "welding_process"],
+    "limitations": "General guidance only. Gas selection depends on material grade, thickness, and transfer mode."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "smaw-electrode-selection",
+    "title": "SMAW electrode selection for carbon steel",
+    "source_ref": "local://standards/smaw-electrode",
+    "section_path": ["SMAW", "Electrode selection"],
+    "content": "SMAW (stick welding) electrode selection: J422 (E4303) for general-purpose carbon steel welding, AC/DC. J507 (E5015) for low-hydrogen requirements, DCEP only. J506 (E5016) for low-hydrogen, AC/DC. Electrode diameter: 2.5mm for thin plate, 3.2mm for 6-12mm, 4.0mm for 12mm+.",
+    "target_fields": ["consumable", "consumable_specification", "welding_process", "polarity"],
+    "limitations": "J422 is NOT compatible with GMAW process. J422 is a SMAW electrode only."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "gtaw-parameters",
+    "title": "GTAW welding parameters",
+    "source_ref": "local://standards/gtaw-params",
+    "section_path": ["GTAW", "Parameters"],
+    "content": "GTAW (TIG) welding: Use pure Ar or Ar+He shielding gas. Filler wire ER50-6 for carbon steel, ER308L for stainless. DCEN polarity (straight polarity). Current range 80-200A depending on thickness. Travel speed 10-25 cm/min. Lower heat input than GMAW/SMAW.",
+    "target_fields": ["consumable", "shielding_gas", "current_range", "voltage_range", "travel_speed", "polarity", "welding_process"],
+    "limitations": "GTAW parameters vary significantly with joint type, position, and material thickness."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "thermal-review-reference",
+    "title": "Preheat and PWHT requirements",
+    "source_ref": "local://standards/thermal",
+    "section_path": ["Thermal controls", "Requirements"],
+    "content": "Preheat requirements depend on material carbon equivalent, thickness, and hydrogen content of consumable. For Q345R (CE~0.40): no preheat required below 25mm thickness with low-hydrogen electrodes. Above 25mm, preheat to 100-150°C. Interpass temperature max 250-300°C for most carbon steels. PWHT: typically 600-650°C for 1 hour per 25mm thickness when required by code.",
+    "target_fields": ["preheat_temperature", "interpass_temperature", "pwht"],
+    "limitations": "These are general guidelines. Actual thermal requirements must be determined by the applicable code (ASME IX, AWS D1.1, etc.) and qualified WPS."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "material-q345r",
+    "title": "Q345R material properties",
+    "source_ref": "local://materials/q345r",
+    "section_path": ["Materials", "Q345R"],
+    "content": "Q345R is a Chinese pressure vessel steel grade (GB 713). Yield strength ≥345MPa, tensile strength 490-620MPa. Carbon equivalent CE(IIW) ≈ 0.38-0.42. Weldability: good, no special preheat required for thickness <25mm. Common applications: boilers, pressure vessels, storage tanks. Similar to ASTM A516 Gr.70.",
+    "target_fields": ["base_material"],
+    "limitations": "Properties vary with thickness and heat treatment. Always verify with mill certificate."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "joint-type-guide",
+    "title": "Weld joint types and preparation",
+    "source_ref": "local://standards/joints",
+    "section_path": ["Joint design", "Types"],
+    "content": "Common joint types: Butt joint (对接焊) - V-groove for plate >6mm, single bevel for 6-12mm, double bevel for >20mm. Fillet joint (角焊缝) - T-joint or lap joint. Corner joint (角接). Edge joint (卷边接头). Groove angle 60°±5° for V-groove. Root gap 0-3mm. Root face 1-2mm.",
+    "target_fields": ["joint_type"],
+    "limitations": "Joint design must comply with the applicable welding code and WPS."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "welding-position-guide",
+    "title": "Welding positions",
+    "source_ref": "local://standards/positions",
+    "section_path": ["Positions", "Classification"],
+    "content": "Welding positions per AWS/ASME: Flat (平焊, 1G/1F) - easiest, highest deposition rate. Horizontal (横焊, 2G/2F) - moderate difficulty. Vertical (立焊, 3G/3F) - requires technique adjustment, lower current. Overhead (仰焊, 4G/4F) - most difficult, lowest current. Position affects current, voltage, and travel speed selection.",
+    "target_fields": ["welding_position"],
+    "limitations": "Position-specific parameters should be qualified per applicable code."
+  },
+  {
+    "source_type": "local_document",
+    "source_id": "heat-input-calculation",
+    "title": "Heat input calculation",
+    "source_ref": "local://standards/heat-input",
+    "section_path": ["Parameters", "Heat input"],
+    "content": "Heat input formula: HI (kJ/mm) = (Voltage × Current × 60) / (Travel Speed × 1000). For Q345R, typical heat input range: 0.8-2.5 kJ/mm. Excessive heat input can degrade mechanical properties. Insufficient heat input may cause lack of fusion. Heat input must be controlled within the qualified WPS range.",
+    "target_fields": ["heat_input"],
+    "limitations": "Heat input is a derived value. The actual range must be established by procedure qualification."
+  }
+]

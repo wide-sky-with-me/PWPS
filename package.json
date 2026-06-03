@@ -1,0 +1,11 @@
+{
+  "name": "pwps-agent",
+  "private": true,
+  "packageManager": "pnpm@11.1.1",
+  "scripts": {
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build",
+    "web:lint": "pnpm --filter web lint",
+    "web:typecheck": "pnpm --filter web typecheck"
+  }
+}
