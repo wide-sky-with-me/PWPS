@@ -15,16 +15,13 @@ import {
 import { useMemo, useState } from "react";
 
 import {
-  createRun,
-  fetchCurrentDecision,
-  fetchOutputs,
-  fetchRun,
-  submitDecision,
-  type CurrentDecision,
-  type Mode,
-  type RunOutputs,
-  type RunState,
-} from "../lib/api";
+  useCreateRun,
+  useCurrentDecision,
+  useOutputs,
+  useRun,
+  useSubmitDecision,
+} from "../lib/hooks";
+import type { Mode, RunOutputs } from "../lib/api";
 
 const groups = [
   ["basic_condition_group", "基础条件"],
@@ -48,13 +45,17 @@ const sampleInput = "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草�
 export function GuidedWorkbench() {
   const [mode, setMode] = useState<Mode>("guided");
   const [input, setInput] = useState(sampleInput);
-  const [run, setRun] = useState<RunState | null>(null);
-  const [decision, setDecision] = useState<CurrentDecision | null>(null);
-  const [outputs, setOutputs] = useState<RunOutputs | null>(null);
+  const [runId, setRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
   const [selectedValues, setSelectedValues] = useState<Record<string, unknown>>({});
+
+  // React Query hooks
+  const createRunMutation = useCreateRun();
+  const { data: run } = useRun(runId);
+  const { data: decision } = useCurrentDecision(runId);
+  const { data: outputs } = useOutputs(runId);
+  const submitDecisionMutation = useSubmitDecision(runId ?? "");
+
   const activeGroup = decision?.target_group ?? run?.current_target?.group_name;
   const completed = useMemo(
     () => new Set(run?.progress.confirmed_groups ?? []),
@@ -68,88 +69,56 @@ export function GuidedWorkbench() {
     }
   }, [decision?.recommended]);
 
+  const busy = createRunMutation.isPending || submitDecisionMutation.isPending;
+
   function selectCandidate(field: string, value: unknown) {
     setSelectedValues((prev) => ({ ...prev, [field]: value }));
   }
 
   async function startRun() {
-    setBusy(true);
     setError(null);
-    setOutputs(null);
     try {
-      const created = await createRun(input, mode);
-      const nextRun = await fetchRun(created.run_id);
-      setRun(nextRun);
-      if (created.status === "waiting_for_user") {
-        setDecision(await fetchCurrentDecision(created.run_id));
-      } else if (created.status === "finished") {
-        setDecision(null);
-        setOutputs(await fetchOutputs(created.run_id));
-      }
+      const created = await createRunMutation.mutateAsync({ input, mode });
+      setRunId(created.run_id);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to create run.");
-    } finally {
-      setBusy(false);
     }
   }
 
   async function acceptRecommended() {
-    if (!run || !decision) return;
-    setBusy(true);
+    if (!runId || !decision) return;
     setError(null);
     try {
-      const result = await submitDecision(run.run_id, {
+      await submitDecisionMutation.mutateAsync({
         session_id: decision.session_id,
         decision_type: "accept_recommended",
         selected_values: selectedValues,
         comment: "Accepted from Guided workbench.",
       });
-      const nextRun = await fetchRun(run.run_id);
-      setRun(nextRun);
-      if (result.status === "finished") {
-        setDecision(null);
-        setOutputs(await fetchOutputs(run.run_id));
-      } else {
-        setDecision(await fetchCurrentDecision(run.run_id));
-      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to submit decision.");
-    } finally {
-      setBusy(false);
     }
   }
 
   async function acceptAlternative() {
-    if (!run || !decision) return;
-    setBusy(true);
+    if (!runId || !decision) return;
     setError(null);
     try {
-      const result = await submitDecision(run.run_id, {
+      await submitDecisionMutation.mutateAsync({
         session_id: decision.session_id,
         decision_type: "choose_alternative",
         selected_values: selectedValues,
         comment: "User selected alternative candidates.",
       });
-      const nextRun = await fetchRun(run.run_id);
-      setRun(nextRun);
-      if (result.status === "finished") {
-        setDecision(null);
-        setOutputs(await fetchOutputs(run.run_id));
-      } else {
-        setDecision(await fetchCurrentDecision(run.run_id));
-      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to submit decision.");
-    } finally {
-      setBusy(false);
     }
   }
 
   function reset() {
-    setRun(null);
-    setDecision(null);
-    setOutputs(null);
+    setRunId(null);
     setError(null);
+    setSelectedValues({});
   }
 
   return (
