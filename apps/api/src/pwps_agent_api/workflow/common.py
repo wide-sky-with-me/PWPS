@@ -9,8 +9,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 from pwps_agent_api.fields import FieldRegistry
-from pwps_agent_api.knowledge import strongest_evidence_source
 from pwps_agent_api.guard import GuardViolation
+from pwps_agent_api.knowledge import strongest_evidence_source
 from pwps_agent_api.schemas import (
     DecisionResult,
     DiscussionRound,
@@ -83,7 +83,12 @@ def commit_decision(
             f"Guard found {len(errors)} error(s), {len(warnings)} warning(s).",
             {
                 "violations": [
-                    {"rule": v.rule, "field": v.field_name, "message": v.message, "severity": v.severity}
+                    {
+                        "rule": v.rule,
+                        "field": v.field_name,
+                        "message": v.message,
+                        "severity": v.severity,
+                    }
                     for v in violations
                 ]
             },

@@ -23,7 +23,6 @@ from pwps_agent_api.schemas import (
     FieldState,
     FieldStatus,
     InferencePolicy,
-    RiskLevel,
     SourceType,
 )
 
@@ -100,7 +99,11 @@ class GuardValidator:
             and state.evidence_ids
         ):
             max_credibility = max(
-                (evidence_store[eid].credibility for eid in state.evidence_ids if eid in evidence_store),
+                (
+                    evidence_store[eid].credibility
+                    for eid in state.evidence_ids
+                    if eid in evidence_store
+                ),
                 default=0.0,
             )
             if max_credibility < 0.5:

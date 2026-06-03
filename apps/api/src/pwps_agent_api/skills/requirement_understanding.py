@@ -19,7 +19,7 @@ from pwps_agent_api.core.config import get_settings
 from pwps_agent_api.core.llm import get_chat_model
 from pwps_agent_api.domain.spec import DomainSpec
 from pwps_agent_api.fields import FieldRegistry
-from pwps_agent_api.schemas import FieldSpec, FieldState, FieldStatus, InferencePolicy, SourceType
+from pwps_agent_api.schemas import FieldState, FieldStatus, SourceType
 
 
 def _build_extraction_model(registry: FieldRegistry) -> type[BaseModel]:
@@ -39,7 +39,7 @@ def _build_extraction_model(registry: FieldRegistry) -> type[BaseModel]:
                 description += f" One of: {', '.join(spec.enum_values)}"
             fields[name] = (str | None, Field(None, description=description))
 
-    return create_model("ExtractedFields", **fields)  # type: ignore[call-overload]
+    return create_model("ExtractedFields", **fields)
 
 
 @dataclass(frozen=True)

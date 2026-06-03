@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -20,7 +19,8 @@ class KnowledgeQueryInput(BaseModel):
 
 
 class KnowledgeQueryTool(BaseTool):
-    """Search the local knowledge base for welding standards, WPS/PQR examples, and technical documents.
+    """Search the local knowledge base for welding standards,
+    WPS/PQR examples, and technical documents.
 
     Returns evidence with source type, credibility, and content.
     Use this tool to find standard requirements, material specifications,

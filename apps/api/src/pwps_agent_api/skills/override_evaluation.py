@@ -56,7 +56,9 @@ class OverrideEvaluationSkill:
         if prompt is None:
             prompt = _DEFAULT_PROMPT
 
-        return await self._llm_evaluate(field_name, override_value, original_value, field_states, prompt)
+        return await self._llm_evaluate(
+            field_name, override_value, original_value, field_states, prompt
+        )
 
     def _fallback(
         self,

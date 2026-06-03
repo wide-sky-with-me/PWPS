@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
@@ -34,10 +35,10 @@ class FieldStateQuery(BaseTool):
     args_schema: type[BaseModel] = FieldStateQueryInput
 
     # This tool needs access to the workflow state, which is injected at runtime
-    _workflow_state: object = None
-    _field_registry: object = None
+    _workflow_state: Any = None
+    _field_registry: Any = None
 
-    def bind_state(self, workflow_state: object, field_registry: object) -> "FieldStateQuery":
+    def bind_state(self, workflow_state: Any, field_registry: Any) -> FieldStateQuery:
         """Bind the workflow state and registry to this tool instance."""
         self._workflow_state = workflow_state
         self._field_registry = field_registry
@@ -61,9 +62,9 @@ class FieldStateQuery(BaseTool):
             results.append({
                 "field": name,
                 "value": fs.value,
-                "status": fs.status.value if fs.status else None,
-                "source_type": fs.source_type.value if fs.source_type else None,
-                "risk_level": fs.risk_level.value if fs.risk_level else None,
+                "status": fs.status.value if fs.status else "",
+                "source_type": fs.source_type.value if fs.source_type else "",
+                "risk_level": fs.risk_level.value if fs.risk_level else "",
                 "confidence": fs.confidence,
                 "needs_human_confirmation": fs.needs_human_confirmation,
                 "evidence_ids": fs.evidence_ids,

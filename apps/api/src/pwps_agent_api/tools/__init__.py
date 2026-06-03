@@ -18,7 +18,7 @@ __all__ = [
 ]
 
 
-def get_all_tools() -> list:
+def get_all_tools() -> list[object]:
     """Return all framework-provided tools as a list."""
     return [
         KnowledgeQueryTool(),

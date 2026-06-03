@@ -22,10 +22,10 @@ import os
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from pwps_agent_api.domain.spec import DomainSpec
-from pwps_agent_api.fields.registry import FieldRegistry, _field, _group
+from pwps_agent_api.fields.registry import FieldRegistry
 from pwps_agent_api.schemas import (
     ConfirmationPolicy,
     FieldGroupSpec,
@@ -93,7 +93,7 @@ def list_domains() -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def _iter_entry_points():
+def _iter_entry_points() -> Any:
     """Yield entry points registered under 'pwps.domains'."""
     try:
         eps = importlib.metadata.entry_points()
@@ -101,7 +101,7 @@ def _iter_entry_points():
         if hasattr(eps, "select"):
             yield from eps.select(group="pwps.domains")
         else:
-            yield from eps.get("pwps.domains", [])  # type: ignore[union-attr]
+            yield from eps.get("pwps.domains", [])  # type: ignore[attr-defined]
     except Exception:
         return
 
@@ -111,7 +111,7 @@ def _iter_entry_points():
 # ---------------------------------------------------------------------------
 
 
-def _iter_domain_dirs():
+def _iter_domain_dirs() -> Any:
     """Yield directories that look like domain packs."""
     search_paths: list[Path] = []
 
@@ -222,7 +222,9 @@ def _parse_field_spec(name: str, raw: dict[str, Any]) -> FieldSpec:
         required_for_draft=raw.get("required_for_draft", True),
         high_risk=raw.get("high_risk", False),
         inference_policy=InferencePolicy(raw.get("inference_policy", "model_allowed")),
-        confirmation_policy=ConfirmationPolicy(raw.get("confirmation_policy", "confirm_if_low_evidence")),
+        confirmation_policy=ConfirmationPolicy(
+            raw.get("confirmation_policy", "confirm_if_low_evidence")
+        ),
         dependencies=raw.get("dependencies", []),
         affects=raw.get("affects", []),
         output_section=raw.get("output_section"),

@@ -112,7 +112,9 @@ async def _duckduckgo_search(query: str, max_results: int = 5) -> list[dict[str,
     return results
 
 
-async def _tavily_search(query: str, max_results: int = 5, api_key: str = "") -> list[dict[str, Any]]:
+async def _tavily_search(
+    query: str, max_results: int = 5, api_key: str = ""
+) -> list[dict[str, Any]]:
     """Search using Tavily API (requires API key)."""
     url = "https://api.tavily.com/search"
     payload = {

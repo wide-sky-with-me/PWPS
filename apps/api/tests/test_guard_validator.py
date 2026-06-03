@@ -11,7 +11,6 @@ from pwps_agent_api.schemas import (
     FieldStatus,
     FieldType,
     InferencePolicy,
-    RiskLevel,
     SourceType,
 )
 
@@ -63,7 +62,7 @@ def normal_spec() -> FieldSpec:
 class TestProvidedOnlyValidation:
     def test_provided_only_filled_by_user_is_ok(
         self, validator: GuardValidator, provided_only_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="project_name",
             group="meta_group",
@@ -77,7 +76,7 @@ class TestProvidedOnlyValidation:
 
     def test_provided_only_filled_by_model_is_violation(
         self, validator: GuardValidator, provided_only_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="project_name",
             group="meta_group",
@@ -94,7 +93,7 @@ class TestProvidedOnlyValidation:
 class TestHighRiskValidation:
     def test_high_risk_with_evidence_is_ok(
         self, validator: GuardValidator, high_risk_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="current_range",
             group="parameter_group",
@@ -120,7 +119,7 @@ class TestHighRiskValidation:
 
     def test_high_risk_without_evidence_is_violation(
         self, validator: GuardValidator, high_risk_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="current_range",
             group="parameter_group",
@@ -136,7 +135,7 @@ class TestHighRiskValidation:
 
     def test_high_risk_with_low_credibility_evidence_is_warning(
         self, validator: GuardValidator, high_risk_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="current_range",
             group="parameter_group",
@@ -159,13 +158,17 @@ class TestHighRiskValidation:
         }
         violations = validator.validate_field_state(state, high_risk_spec, evidence_store)
         assert any(v.rule == "low_credibility_evidence" for v in violations)
-        assert all(v.severity == "warning" for v in violations if v.rule == "low_credibility_evidence")
+        assert all(
+            v.severity == "warning"
+            for v in violations
+            if v.rule == "low_credibility_evidence"
+        )
 
 
 class TestCandidateValidation:
     def test_candidate_for_provided_only_is_violation(
         self, validator: GuardValidator, provided_only_spec: FieldSpec
-    ):
+    ) -> None:
         violations = validator.validate_candidate(
             "project_name",
             {"value": "Project A", "confidence": 0.5, "reason": "test", "evidence_ids": []},
@@ -176,7 +179,7 @@ class TestCandidateValidation:
 
     def test_candidate_for_normal_field_is_ok(
         self, validator: GuardValidator, normal_spec: FieldSpec
-    ):
+    ) -> None:
         violations = validator.validate_candidate(
             "joint_type",
             {"value": "对接焊", "confidence": 0.8, "reason": "test", "evidence_ids": ["ev-1"]},
@@ -188,7 +191,7 @@ class TestCandidateValidation:
 class TestStateTransition:
     def test_confirmed_without_source_or_evidence_is_violation(
         self, validator: GuardValidator, normal_spec: FieldSpec
-    ):
+    ) -> None:
         state = FieldState(
             name="joint_type",
             group="basic_condition_group",

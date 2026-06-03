@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
@@ -249,10 +248,13 @@ class AuditEngine:
                     f"high_risk={spec.high_risk}, "
                     f"inference_policy={spec.inference_policy.value})"
                 )
+            status = state.status.value if state.status else 'N/A'
+            source = state.source_type.value if state.source_type else 'N/A'
+            risk = state.risk_level.value if state.risk_level else 'N/A'
             lines.append(
-                f"- {name}: value={state.value}, status={state.status.value if state.status else 'N/A'}, "
-                f"source={state.source_type.value if state.source_type else 'N/A'}, "
-                f"risk={state.risk_level.value if state.risk_level else 'N/A'}, "
+                f"- {name}: value={state.value}, status={status}, "
+                f"source={source}, "
+                f"risk={risk}, "
                 f"evidence_ids={state.evidence_ids}"
                 f"{spec_info}"
             )
@@ -265,7 +267,7 @@ class AuditEngine:
             return "No evidence available."
 
         lines = []
-        for eid, ev in evidence_store.items():
+        for _eid, ev in evidence_store.items():
             lines.append(
                 f"- [{ev.source_type.value}] {ev.source_title}: "
                 f"{ev.content[:150]}... "
@@ -580,7 +582,10 @@ def _audit_thickness_material_consistency(
                             rule_type=AuditRuleType.RISK,
                             severity=RiskLevel.HIGH,
                             target_fields=["thickness"],
-                            description=f"Thickness {thickness} is very thin. Special procedures may be required.",
+                            description=(
+                                f"Thickness {thickness} is very thin. "
+                                "Special procedures may be required."
+                            ),
                             recommended_action="Verify thin-plate welding procedure.",
                             repair_target="basic_condition_group",
                             source_rule="thickness_material_consistency",
@@ -593,7 +598,10 @@ def _audit_thickness_material_consistency(
                             rule_type=AuditRuleType.RISK,
                             severity=RiskLevel.MEDIUM,
                             target_fields=["thickness"],
-                            description=f"Thickness {thickness} is very thick. Multi-pass and PWHT may be required.",
+                            description=(
+                                f"Thickness {thickness} is very thick. "
+                                "Multi-pass and PWHT may be required."
+                            ),
                             recommended_action="Verify thick-plate welding requirements.",
                             repair_target="basic_condition_group",
                             source_rule="thickness_material_consistency",

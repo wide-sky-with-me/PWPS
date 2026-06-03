@@ -104,11 +104,11 @@ _MAX_REPAIR_LOOPS: int = 3
 def _build_auto_graph(registry: FieldRegistry, domain: DomainSpec | None = None) -> Any:
     graph = StateGraph(AutoGraphState)
     graph.add_node("normalize_input", _normalize_input)
-    graph.add_node("understand_requirement", _understand_requirement(registry, domain))
+    graph.add_node("understand_requirement", _understand_requirement(registry, domain))  # type: ignore[arg-type]
     graph.add_node("select_mode", _select_mode)
-    graph.add_node("build_confirmation_queue", _build_confirmation_queue(registry))
-    graph.add_node("confirm_target_subgraph", _confirm_all_targets(registry, domain))
-    graph.add_node("global_audit", _global_audit(registry, domain))
+    graph.add_node("build_confirmation_queue", _build_confirmation_queue(registry))  # type: ignore[arg-type]
+    graph.add_node("confirm_target_subgraph", _confirm_all_targets(registry, domain))  # type: ignore[arg-type]
+    graph.add_node("global_audit", _global_audit(registry, domain))  # type: ignore[arg-type]
     graph.add_node("finalize_output", _finalize_output)
 
     graph.add_edge(START, "normalize_input")

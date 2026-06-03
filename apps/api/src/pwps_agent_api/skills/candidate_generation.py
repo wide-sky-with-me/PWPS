@@ -171,7 +171,9 @@ class CandidateGenerationSkill:
                         else "Low-confidence candidate from domain prior. Requires human review."
                     ),
                     "evidence_ids": evidence_by_field.get(field_name, []),
-                    "risks": ["Low-confidence prior value. Requires qualified welding engineer review."],
+                    "risks": [
+                        "Low-confidence prior value. Requires qualified welding engineer review."
+                    ],
                 }
             ]
         return result
