@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 from uuid import uuid4
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 
 from pwps_agent_api.actors.virtual import VirtualDecisionActor
@@ -60,6 +61,7 @@ async def run_auto_draft(
     raw_input: str,
     output_dir: Path,
     domain: DomainSpec | None = None,
+    checkpointer: BaseCheckpointSaver[Any] | None = None,
 ) -> AutoDraftResult:
     """Run the Auto Draft workflow.
 
@@ -67,6 +69,7 @@ async def run_auto_draft(
         raw_input: User's natural language input.
         output_dir: Directory for output files.
         domain: Domain pack. If None, loads the default welding domain.
+        checkpointer: Optional LangGraph checkpointer for state persistence.
     """
     if domain is None:
         from pwps_agent_api.domain.loader import load_domain
@@ -77,7 +80,7 @@ async def run_auto_draft(
             domain = None
 
     registry = domain.field_registry if domain is not None else load_default_field_registry()
-    workflow = _build_auto_graph(registry, domain)
+    workflow = _build_auto_graph(registry, domain, checkpointer)
     run_id = f"run-{uuid4()}"
     initial_state = WorkflowState(
         run_id=run_id,
@@ -87,11 +90,15 @@ async def run_auto_draft(
         workflow_version="0.2.0",
     )
 
+    # Use run_id as thread_id for checkpoint isolation
+    config = {"configurable": {"thread_id": run_id}}
+
     result = await workflow.ainvoke(
         {
             "workflow_state": initial_state.model_dump(mode="json"),
             "output_dir": str(output_dir),
-        }
+        },
+        config=config,
     )
     state = WorkflowState.model_validate(result["workflow_state"])
     output_paths = {name: Path(path) for name, path in result["output_paths"].items()}
@@ -102,7 +109,11 @@ _ACTIONABLE_RULE_TYPES: set[AuditRuleType] = {AuditRuleType.HARD, AuditRuleType.
 _MAX_REPAIR_LOOPS: int = 3
 
 
-def _build_auto_graph(registry: FieldRegistry, domain: DomainSpec | None = None) -> Any:
+def _build_auto_graph(
+    registry: FieldRegistry,
+    domain: DomainSpec | None = None,
+    checkpointer: BaseCheckpointSaver[Any] | None = None,
+) -> Any:
     graph = StateGraph(AutoGraphState)
     graph.add_node("normalize_input", _normalize_input)
     graph.add_node("understand_requirement", _understand_requirement(registry, domain))  # type: ignore[arg-type]
@@ -127,7 +138,7 @@ def _build_auto_graph(registry: FieldRegistry, domain: DomainSpec | None = None)
         },
     )
     graph.add_edge("finalize_output", END)
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
 
 
 def _should_repair_or_finalize(state: AutoGraphState) -> str:
