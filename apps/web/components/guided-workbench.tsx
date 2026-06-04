@@ -12,7 +12,7 @@ import {
   RotateCcw,
   ShieldAlert,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   useCreateRun,
@@ -41,6 +41,23 @@ const riskLabels: Record<string, { text: string; className: string }> = {
 };
 
 const sampleInput = "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草案";
+
+function ConfidenceBar({ value }: { value: number }) {
+  const percent = Math.round(value * 100);
+  const level = percent < 40 ? "low" : percent < 70 ? "medium" : "";
+
+  return (
+    <div className="candidate-confidence">
+      <div className="confidence-bar">
+        <div
+          className={`confidence-fill ${level}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <span className="confidence-text">{percent}%</span>
+    </div>
+  );
+}
 
 export function GuidedWorkbench() {
   const [mode, setMode] = useState<Mode>("guided");
@@ -262,9 +279,20 @@ export function GuidedWorkbench() {
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 selectCandidate(field, candidate.value);
+                              } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                                e.preventDefault();
+                                const next = candidates[(idx + 1) % candidates.length];
+                                selectCandidate(field, next.value);
+                              } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                                e.preventDefault();
+                                const prev = candidates[(idx - 1 + candidates.length) % candidates.length];
+                                selectCandidate(field, prev.value);
                               }
                             }}
                           >
+                            <div className="candidate-check">
+                              <Check size={16} />
+                            </div>
                             <div>
                               <strong>{formatValue(candidate.value)}</strong>
                               <p>{candidate.reason}</p>
@@ -274,7 +302,7 @@ export function GuidedWorkbench() {
                                 </small>
                               ) : null}
                             </div>
-                            <span>{Math.round(candidate.confidence * 100)}%</span>
+                            <ConfidenceBar value={candidate.confidence} />
                           </div>
                         ))}
                       </article>

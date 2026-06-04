@@ -461,21 +461,56 @@ textarea:focus {
 .candidate {
   align-items: flex-start;
   background: #f8faf8;
-  border-left: 3px solid var(--safe);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--line);
+  cursor: pointer;
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+
+.candidate:hover {
+  background: #f0f4f0;
+  border-color: var(--line);
+  border-left-color: var(--safe);
+}
+
+.candidate:focus-visible {
+  border-color: var(--safe);
+  outline: 2px solid rgba(33, 112, 86, 0.2);
+  outline-offset: -2px;
 }
 
 .candidate div {
   display: grid;
+  flex: 1;
   gap: 4px;
+  min-width: 0;
 }
 
 .candidate-selected {
   background: var(--safe-bg);
+  border-color: var(--safe);
   border-left-color: var(--safe);
+}
+
+.candidate-selected:hover {
+  background: #d4ede4;
+}
+
+.candidate-check {
+  align-items: center;
+  color: var(--safe);
+  display: flex;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.candidate-selected .candidate-check {
+  opacity: 1;
 }
 
 .candidate strong {
@@ -485,10 +520,49 @@ textarea:focus {
 }
 
 .candidate p,
-.candidate span {
+.candidate small {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.candidate-confidence {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  min-width: 60px;
+}
+
+.confidence-bar {
+  background: var(--line);
+  border-radius: 3px;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  background: var(--safe);
+  border-radius: 3px;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.confidence-fill.low {
+  background: var(--danger);
+}
+
+.confidence-fill.medium {
+  background: var(--warn);
+}
+
+.confidence-text {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
 }
 
 .sticky-actions {
