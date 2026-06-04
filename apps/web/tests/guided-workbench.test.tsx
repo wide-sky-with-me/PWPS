@@ -21,6 +21,8 @@ const mockFetchCurrentDecision = vi.mocked(fetchCurrentDecision);
 const mockSubmitDecision = vi.mocked(submitDecision);
 const mockFetchOutputs = vi.mocked(fetchOutputs);
 
+const TEST_INPUT = "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草案";
+
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -54,14 +56,21 @@ describe("GuidedWorkbench", () => {
   });
 
   it("disables create button when input is empty", async () => {
+    renderWithQueryClient(<GuidedWorkbench />);
+
+    const createButton = screen.getByText("创建草案");
+    expect(createButton).toBeDisabled();
+  });
+
+  it("enables create button when input is provided", async () => {
     const user = userEvent.setup();
     renderWithQueryClient(<GuidedWorkbench />);
 
     const textarea = screen.getByLabelText("工艺需求");
-    await user.clear(textarea);
+    await user.type(textarea, TEST_INPUT);
 
     const createButton = screen.getByText("创建草案");
-    expect(createButton).toBeDisabled();
+    expect(createButton).not.toBeDisabled();
   });
 
   it("creates a run and shows workbench", async () => {
@@ -82,6 +91,9 @@ describe("GuidedWorkbench", () => {
 
     renderWithQueryClient(<GuidedWorkbench />);
 
+    const textarea = screen.getByLabelText("工艺需求");
+    await user.type(textarea, TEST_INPUT);
+
     const createButton = screen.getByText("创建草案");
     await user.click(createButton);
 
@@ -96,6 +108,9 @@ describe("GuidedWorkbench", () => {
     mockCreateRun.mockRejectedValue(new Error("Network error"));
 
     renderWithQueryClient(<GuidedWorkbench />);
+
+    const textarea = screen.getByLabelText("工艺需求");
+    await user.type(textarea, TEST_INPUT);
 
     const createButton = screen.getByText("创建草案");
     await user.click(createButton);
@@ -123,6 +138,9 @@ describe("GuidedWorkbench", () => {
 
     renderWithQueryClient(<GuidedWorkbench />);
 
+    const textarea = screen.getByLabelText("工艺需求");
+    await user.type(textarea, TEST_INPUT);
+
     const createButton = screen.getByText("创建草案");
     await user.click(createButton);
 
@@ -148,6 +166,9 @@ describe("GuidedWorkbench", () => {
     });
 
     renderWithQueryClient(<GuidedWorkbench />);
+
+    const textarea = screen.getByLabelText("工艺需求");
+    await user.type(textarea, TEST_INPUT);
 
     const createButton = screen.getByText("创建草案");
     await user.click(createButton);
@@ -178,6 +199,9 @@ describe("GuidedWorkbench", () => {
     renderWithQueryClient(<GuidedWorkbench />);
 
     // Create a run
+    const textarea = screen.getByLabelText("工艺需求");
+    await user.type(textarea, TEST_INPUT);
+
     const createButton = screen.getByText("创建草案");
     await user.click(createButton);
 

@@ -14,16 +14,19 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 
-import { ErrorBoundary } from "./error-boundary";
+import { ErrorBoundary } from "@/components/error-boundary";
+import { ParticleBackground } from "@/components/particle-background";
+import { ConfidenceBar, LoadingPanel, LoadingSkeleton } from "@/components/ui-components";
 import {
   useCreateRun,
   useCurrentDecision,
   useOutputs,
   useRun,
   useSubmitDecision,
-} from "../lib/hooks";
-import type { Mode, RunOutputs } from "../lib/api";
+} from "@/lib/hooks";
+import type { Mode, RunOutputs } from "@/lib/api";
 
 const groups = [
   ["basic_condition_group", "基础条件"],
@@ -42,189 +45,35 @@ const riskLabels: Record<string, { text: string; className: string }> = {
   insufficient_evidence: { text: "证据不足", className: "risk-tag warn" },
 };
 
-const sampleInput = "Q345R，12mm，对接焊，平焊，GMAW，生成 pWPS 草案";
+const sampleInput = "";
 
-function ConfidenceBar({ value }: { value: number }) {
-  const percent = Math.round(value * 100);
-  const level = percent < 40 ? "low" : percent < 70 ? "medium" : "";
-
-  return (
-    <div
-      className="candidate-confidence"
-      role="progressbar"
-      aria-valuenow={percent}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label={`置信度 ${percent}%`}
-    >
-      <div className="confidence-bar">
-        <div
-          className={`confidence-fill ${level}`}
-          style={{ width: `${percent}%` }}
-        />
-      </div>
-      <span className="confidence-text">{percent}%</span>
-    </div>
-  );
+// M5: Stable key generation for candidate values
+function candidateKey(value: unknown, index: number): string {
+  if (value === null || value === undefined) return `candidate-${index}`;
+  if (typeof value === "string") return `candidate-${value}`;
+  if (typeof value === "number") return `candidate-${value}`;
+  if (typeof value === "boolean") return `candidate-${value}`;
+  // For objects, use a deterministic string representation
+  try {
+    return `candidate-${JSON.stringify(value, Object.keys(value as Record<string, unknown>).sort())}`;
+  } catch {
+    return `candidate-${index}`;
+  }
 }
 
-function ParticleBackground() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationId: number;
-    let particles: Array<{
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      size: number;
-      opacity: number;
-      color: string;
-    }> = [];
-
-    const colors = [
-      "rgba(6, 182, 212, ",
-      "rgba(139, 92, 246, ",
-      "rgba(16, 185, 129, ",
-    ];
-
-    function resize() {
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+function valuesEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (a === null || b === null) return false;
+  if (typeof a !== typeof b) return false;
+  if (typeof a === "object") {
+    try {
+      return JSON.stringify(a, Object.keys(a as Record<string, unknown>).sort()) ===
+             JSON.stringify(b, Object.keys(b as Record<string, unknown>).sort());
+    } catch {
+      return false;
     }
-
-    function createParticles() {
-      if (!canvas) return;
-      particles = Array.from({ length: 50 }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 2 + 1,
-        opacity: Math.random() * 0.5 + 0.1,
-        color: colors[Math.floor(Math.random() * colors.length)],
-      }));
-    }
-
-    function animate() {
-      if (!canvas || !ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `${p.color}${p.opacity})`;
-        ctx.fill();
-      });
-
-      // Draw connections
-      particles.forEach((p1, i) => {
-        particles.slice(i + 1).forEach((p2) => {
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(6, 182, 212, ${0.1 * (1 - dist / 150)})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        });
-      });
-
-      animationId = requestAnimationFrame(animate);
-    }
-
-    resize();
-    createParticles();
-    animate();
-
-    // M1: Use named function for proper cleanup
-    function handleResize() {
-      resize();
-      createParticles();
-    }
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        pointerEvents: "none",
-        zIndex: 0,
-        opacity: 0.6,
-      }}
-    />
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div style={{ display: "grid", gap: "16px" }}>
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          style={{
-            background: "rgba(0, 0, 0, 0.2)",
-            borderRadius: "12px",
-            padding: "20px",
-            animation: `fadeIn 0.5s ease ${i * 0.1}s backwards`,
-          }}
-        >
-          <div
-            style={{
-              height: "16px",
-              width: "30%",
-              background: "linear-gradient(90deg, rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.1))",
-              backgroundSize: "200% 100%",
-              animation: "shimmer 1.5s infinite",
-              borderRadius: "4px",
-              marginBottom: "12px",
-            }}
-          />
-          <div
-            style={{
-              height: "12px",
-              width: "60%",
-              background: "linear-gradient(90deg, rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.1))",
-              backgroundSize: "200% 100%",
-              animation: "shimmer 1.5s infinite 0.2s",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-      ))}
-    </div>
-  );
+  }
+  return false;
 }
 
 export function GuidedWorkbench() {
@@ -241,6 +90,10 @@ export function GuidedWorkbench() {
   const { data: outputs } = useOutputs(runId);
   const submitDecisionMutation = useSubmitDecision(runId ?? "");
 
+  // L9: Focus management refs
+  const decisionHeaderRef = useRef<HTMLDivElement>(null);
+  const previousDecisionRef = useRef<string | null>(null);
+
   const activeGroup = decision?.target_group ?? run?.current_target?.group_name;
   const completed = useMemo(
     () => new Set(run?.progress.confirmed_groups ?? []),
@@ -253,6 +106,17 @@ export function GuidedWorkbench() {
       setSelectedValues(decision.recommended);
     }
   }, [decision?.recommended]);
+
+  // L9: Focus on decision header when it changes
+  useEffect(() => {
+    if (decision?.session_id && decision.session_id !== previousDecisionRef.current) {
+      previousDecisionRef.current = decision.session_id;
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        decisionHeaderRef.current?.focus();
+      }, 100);
+    }
+  }, [decision?.session_id]);
 
   const busy = createRunMutation.isPending || submitDecisionMutation.isPending;
 
@@ -373,13 +237,13 @@ export function GuidedWorkbench() {
           </section>
         ) : (
           <section className="workbench">
-            <aside className="progress-rail">
+            <aside className="progress-rail" aria-busy={isRunLoading}>
               <div className="rail-heading">
                 <p className="kicker">Run progress</p>
                 <h2>字段组确认</h2>
                 <code>{run.run_id}</code>
               </div>
-              <ol className="group-list">
+              <ol className="group-list" aria-label="字段组进度">
                 {groups.map(([name, label], index) => (
                   <li
                     className={[
@@ -407,7 +271,13 @@ export function GuidedWorkbench() {
                 <LoadingSkeleton />
               ) : decision ? (
                 <>
-                  <div className="decision-header">
+                  <div
+                    className="decision-header"
+                    ref={decisionHeaderRef}
+                    tabIndex={-1}
+                    role="heading"
+                    aria-level={1}
+                  >
                     <div>
                       <p className="kicker">Current decision</p>
                       <h1>{labelForGroup(decision.target_group)}</h1>
@@ -435,7 +305,7 @@ export function GuidedWorkbench() {
                           : "low";
                       const risk = riskLabels[riskLevel];
                       const selectedIdx = candidates.findIndex(
-                        (c) => JSON.stringify(c.value) === JSON.stringify(selectedValues[field])
+                        (c) => valuesEqual(c.value, selectedValues[field])
                       );
 
                       return (
@@ -450,7 +320,7 @@ export function GuidedWorkbench() {
                           {candidates.map((candidate, idx) => (
                             <div
                               className={`candidate${idx === selectedIdx ? " candidate-selected" : ""}`}
-                              key={JSON.stringify(candidate.value)}
+                              key={candidateKey(candidate.value, idx)}
                               onClick={() => selectCandidate(field, candidate.value)}
                               role="button"
                               tabIndex={0}
