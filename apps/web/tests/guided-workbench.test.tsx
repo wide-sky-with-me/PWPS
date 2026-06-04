@@ -69,13 +69,15 @@ describe("GuidedWorkbench", () => {
 
     mockCreateRun.mockResolvedValue({
       run_id: "test-run-001",
-      status: "running",
+      status: "waiting_for_user",
     });
     mockFetchRun.mockResolvedValue({
       run_id: "test-run-001",
-      status: "running",
-      progress: { confirmed_groups: [], pending_groups: ["basic_condition_group"] },
+      status: "waiting_for_user",
+      mode: "guided",
       current_target: { group_name: "basic_condition_group", fields: ["base_material"] },
+      progress: { confirmed_groups: [], remaining_groups: ["basic_condition_group"] },
+      publishability: null,
     });
 
     renderWithQueryClient(<GuidedWorkbench />);
@@ -108,13 +110,15 @@ describe("GuidedWorkbench", () => {
 
     mockCreateRun.mockResolvedValue({
       run_id: "test-run-002",
-      status: "running",
+      status: "waiting_for_user",
     });
     mockFetchRun.mockResolvedValue({
       run_id: "test-run-002",
-      status: "running",
-      progress: { confirmed_groups: [], pending_groups: ["basic_condition_group"] },
+      status: "waiting_for_user",
+      mode: "guided",
       current_target: { group_name: "basic_condition_group", fields: ["base_material"] },
+      progress: { confirmed_groups: [], remaining_groups: ["basic_condition_group"] },
+      publishability: null,
     });
 
     renderWithQueryClient(<GuidedWorkbench />);
@@ -132,13 +136,15 @@ describe("GuidedWorkbench", () => {
 
     mockCreateRun.mockResolvedValue({
       run_id: "test-run-003",
-      status: "running",
+      status: "waiting_for_user",
     });
     mockFetchRun.mockResolvedValue({
       run_id: "test-run-003",
-      status: "running",
-      progress: { confirmed_groups: [], pending_groups: ["basic_condition_group"] },
+      status: "waiting_for_user",
+      mode: "guided",
       current_target: { group_name: "basic_condition_group", fields: ["base_material"] },
+      progress: { confirmed_groups: [], remaining_groups: ["basic_condition_group", "consumable_group", "parameter_group"] },
+      publishability: null,
     });
 
     renderWithQueryClient(<GuidedWorkbench />);
@@ -158,13 +164,15 @@ describe("GuidedWorkbench", () => {
 
     mockCreateRun.mockResolvedValue({
       run_id: "test-run-004",
-      status: "running",
+      status: "waiting_for_user",
     });
     mockFetchRun.mockResolvedValue({
       run_id: "test-run-004",
-      status: "running",
-      progress: { confirmed_groups: [], pending_groups: ["basic_condition_group"] },
+      status: "waiting_for_user",
+      mode: "guided",
       current_target: { group_name: "basic_condition_group", fields: ["base_material"] },
+      progress: { confirmed_groups: [], remaining_groups: ["basic_condition_group"] },
+      publishability: null,
     });
 
     renderWithQueryClient(<GuidedWorkbench />);
