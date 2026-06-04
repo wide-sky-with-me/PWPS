@@ -1192,23 +1192,31 @@ textarea::placeholder {
 }
 
 /* ============================================
-   Utility Classes
+   Accessibility: Reduced Motion
    ============================================ */
 
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-}
+/* ============================================
+   Accessibility: Reduced Motion
+   ============================================ */
 
-.glow {
-  box-shadow: var(--shadow-glow);
-}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 
-.text-gradient {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  .brand-mark {
+    animation: none;
+  }
+
+  .live-dot {
+    animation: none;
+  }
+
+  .spin {
+    animation: none;
+  }
 }

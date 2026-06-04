@@ -17,6 +17,8 @@ export function useCreateRun() {
       createRun(input, mode),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["run", data.run_id] });
+      // M2: Also invalidate decision query to avoid delay
+      queryClient.invalidateQueries({ queryKey: ["decision", data.run_id] });
     },
   });
 }
@@ -39,7 +41,11 @@ export function useCurrentDecision(runId: string | null) {
     queryKey: ["decision", runId],
     queryFn: () => fetchCurrentDecision(runId!),
     enabled: !!runId,
-    retry: false,
+    // M7: Retry on network errors but not on 404
+    retry: (failureCount, error) => {
+      if (error.message.includes("404")) return false;
+      return failureCount < 1;
+    },
   });
 }
 
@@ -65,5 +71,7 @@ export function useOutputs(runId: string | null) {
     queryKey: ["outputs", runId],
     queryFn: () => fetchOutputs(runId!),
     enabled: !!runId,
+    // H4/M9: Always fetch fresh data for outputs
+    staleTime: 0,
   });
 }

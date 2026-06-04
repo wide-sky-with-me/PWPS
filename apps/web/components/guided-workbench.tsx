@@ -13,8 +13,9 @@ import {
   ShieldAlert,
   Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+import { ErrorBoundary } from "./error-boundary";
 import {
   useCreateRun,
   useCurrentDecision,
@@ -48,7 +49,14 @@ function ConfidenceBar({ value }: { value: number }) {
   const level = percent < 40 ? "low" : percent < 70 ? "medium" : "";
 
   return (
-    <div className="candidate-confidence">
+    <div
+      className="candidate-confidence"
+      role="progressbar"
+      aria-valuenow={percent}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`置信度 ${percent}%`}
+    >
       <div className="confidence-bar">
         <div
           className={`confidence-fill ${level}`}
@@ -148,19 +156,23 @@ function ParticleBackground() {
     createParticles();
     animate();
 
-    window.addEventListener("resize", () => {
+    // M1: Use named function for proper cleanup
+    function handleResize() {
       resize();
       createParticles();
-    });
+    }
+    window.addEventListener("resize", handleResize);
 
     return () => {
       cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       style={{
         position: "fixed",
         top: 0,
@@ -236,7 +248,7 @@ export function GuidedWorkbench() {
   );
 
   // Sync recommended values when decision changes
-  useMemo(() => {
+  useEffect(() => {
     if (decision?.recommended) {
       setSelectedValues(decision.recommended);
     }
@@ -297,6 +309,7 @@ export function GuidedWorkbench() {
   return (
     <>
       <ParticleBackground />
+      <ErrorBoundary>
       <main className="app-shell">
         <header className="topbar">
           <div className="brand-lockup">
@@ -335,13 +348,15 @@ export function GuidedWorkbench() {
               <div className="form-row">
                 <div>
                   <span className="field-label">工作模式</span>
-                  <div className="segmented">
+                  <div className="segmented" role="radiogroup" aria-label="工作模式">
                     {(["guided", "auto"] as const).map((item) => (
                       <button
                         className={mode === item ? "active" : ""}
                         key={item}
                         onClick={() => setMode(item)}
                         type="button"
+                        role="radio"
+                        aria-checked={mode === item}
                       >
                         {item === "guided" ? "Guided" : "Auto"}
                       </button>
@@ -353,7 +368,7 @@ export function GuidedWorkbench() {
                   创建草案
                 </button>
               </div>
-              {error ? <p className="error-text">{error}</p> : null}
+              {error ? <p className="error-text" role="alert">{error}</p> : null}
             </div>
           </section>
         ) : (
@@ -488,10 +503,12 @@ export function GuidedWorkbench() {
               ) : (
                 <div className="loading-panel">
                   <LoaderCircle className="spin" size={24} />
-                  正在准备字段确认卡片
+                  {run?.status === "finalizing" || run?.status === "auditing"
+                    ? "正在生成草案输出..."
+                    : "正在准备字段确认卡片"}
                 </div>
               )}
-              {error ? <p className="error-text">{error}</p> : null}
+              {error ? <p className="error-text" role="alert">{error}</p> : null}
             </section>
 
             <aside className="context-rail">
@@ -528,7 +545,13 @@ export function GuidedWorkbench() {
                   decision.risks.map((risk, i) => (
                     <div className="risk-note" key={i}>
                       <AlertTriangle size={17} />
-                      <p>{JSON.stringify(risk)}</p>
+                      <p>
+                        {typeof risk === "string"
+                          ? risk
+                          : (risk as Record<string, unknown>).description
+                            ? String((risk as Record<string, unknown>).description)
+                            : JSON.stringify(risk)}
+                      </p>
                     </div>
                   ))
                 ) : (
@@ -554,6 +577,7 @@ export function GuidedWorkbench() {
           </section>
         )}
       </main>
+      </ErrorBoundary>
     </>
   );
 }

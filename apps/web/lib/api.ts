@@ -29,14 +29,6 @@ export type Evidence = {
   limitations?: string | null;
 };
 
-/** Guard violation from the output validation layer. */
-export type GuardViolation = {
-  rule: string;
-  field_name: string;
-  message: string;
-  severity: "error" | "warning";
-};
-
 export type CurrentDecision = {
   run_id: string;
   session_id: string;
@@ -88,8 +80,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
   if (!response.ok) {
-    const payload = (await response.json()) as { message?: string };
-    throw new Error(payload.message ?? `Request failed with ${response.status}`);
+    let message = `Request failed with ${response.status}`;
+    try {
+      const payload = (await response.json()) as { message?: string; detail?: string };
+      message = payload.message ?? payload.detail ?? message;
+    } catch {
+      // Response body is not JSON, use default message
+    }
+    throw new Error(message);
   }
   return (await response.json()) as T;
 }
