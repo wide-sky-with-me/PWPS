@@ -115,7 +115,9 @@ class OverrideEvaluationSkill:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(OverrideEvaluationOutput)
+        structured_model = model.with_structured_output(
+            OverrideEvaluationOutput, method="json_mode"
+        )
 
         messages = [
             SystemMessage(content=prompt_template),

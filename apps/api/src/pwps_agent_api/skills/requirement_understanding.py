@@ -84,7 +84,7 @@ class RequirementUnderstandingSkill:
             return self._fallback_extract(raw_input, registry)
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(ExtractedFields)
+        structured_model = model.with_structured_output(ExtractedFields, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt),

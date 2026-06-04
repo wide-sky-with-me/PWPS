@@ -138,7 +138,7 @@ class AuditEngine:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(LLMAuditResponse)
+        structured_model = model.with_structured_output(LLMAuditResponse, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt_template),

@@ -99,15 +99,21 @@ class RunService:
             return None
 
         outputs = record.outputs_json
-        publishability = outputs["risk_report"].get("publishability")
+        if not outputs:
+            return None
+
+        # Handle missing keys gracefully
+        risk_report = outputs.get("risk_report", {})
+        publishability = risk_report.get("publishability") if risk_report else None
+
         return RunOutputsResponse(
-            pwps=outputs["pwps"],
-            field_report=outputs["field_report"],
+            pwps=outputs.get("pwps", {}),
+            field_report=outputs.get("field_report", {}),
             evidence_report={
-                "evidence": list(outputs["field_report"].get("evidence_store", {}).values())
+                "evidence": list(outputs.get("field_report", {}).get("evidence_store", {}).values())
             },
-            risk_report=outputs["risk_report"],
-            discussion_trace=outputs["discussion_trace"],
+            risk_report=risk_report,
+            discussion_trace=outputs.get("discussion_trace", {}),
             publishability=None if publishability is None else Publishability(publishability),
         )
 

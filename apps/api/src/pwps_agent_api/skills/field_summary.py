@@ -85,7 +85,7 @@ class FieldSummarySkill:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(FieldSummaryOutput)
+        structured_model = model.with_structured_output(FieldSummaryOutput, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt_template),

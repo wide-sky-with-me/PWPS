@@ -115,7 +115,7 @@ class FieldPlanningSkill:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(FieldPlanningOutput)
+        structured_model = model.with_structured_output(FieldPlanningOutput, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt_template),

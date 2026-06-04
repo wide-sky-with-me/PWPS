@@ -133,7 +133,7 @@ class RiskSummarySkill:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(RiskSummaryOutput)
+        structured_model = model.with_structured_output(RiskSummaryOutput, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt_template),

@@ -32,6 +32,8 @@ def get_chat_model(settings: Settings | None = None) -> BaseChatModel:
             api_key=api_key,
             base_url=s.llm_base_url,
             temperature=s.llm_temperature,
+            # Use JSON mode for structured output (thinking mode doesn't support tool_choice)
+            model_kwargs={"response_format": {"type": "json_object"}},
         )
 
     # Default: OpenAI-compatible

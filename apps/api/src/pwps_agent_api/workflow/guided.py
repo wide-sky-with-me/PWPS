@@ -674,13 +674,22 @@ async def resume_guided_draft(
             )
         result = event
 
-    # Workflow completed
-    final_state_dict = result.get("workflow_state", {}) if result else {}
+    # Workflow completed - get final state from checkpoint
+    state_snapshot = await workflow.aget_state(config)
+    final_state_dict = state_snapshot.values.get("workflow_state", {})
     final_state = WorkflowState.model_validate(final_state_dict)
+
+    # Get output paths from the result or from the checkpoint
+    output_paths_dict = {}
+    if result and "output_paths" in result:
+        output_paths_dict = result["output_paths"]
+    elif "output_paths" in state_snapshot.values:
+        output_paths_dict = state_snapshot.values["output_paths"]
+
     output_paths = {
         name: Path(path)
-        for name, path in (result.get("output_paths") or {}).items()
-    } if result else {}
+        for name, path in output_paths_dict.items()
+    }
     return GuidedDraftResult(
         state=final_state,
         pending_decision=None,

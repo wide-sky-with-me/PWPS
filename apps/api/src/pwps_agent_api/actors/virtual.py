@@ -146,7 +146,7 @@ class VirtualDecisionActor(DecisionActor):
         prompt = "\n".join(prompt_parts)
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(ActorDecision)
+        structured_model = model.with_structured_output(ActorDecision, method="json_mode")
 
         try:
             messages = [

@@ -261,7 +261,7 @@ class CandidateGenerationSkill:
         )
 
         model = get_chat_model()
-        structured_model = model.with_structured_output(CandidateResponse)
+        structured_model = model.with_structured_output(CandidateResponse, method="json_mode")
 
         messages = [
             SystemMessage(content=prompt_template),
