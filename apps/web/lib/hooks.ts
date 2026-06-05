@@ -1,13 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  createEventStream,
   createRun,
   fetchCurrentDecision,
   fetchOutputs,
   fetchRun,
   submitDecision,
   type Mode,
+  type SSEMessage,
+  type TraceEvent,
 } from "./api";
 
 export function useCreateRun() {
@@ -74,4 +78,56 @@ export function useOutputs(runId: string | null) {
     // H4/M9: Always fetch fresh data for outputs
     staleTime: 0,
   });
+}
+
+// H5: SSE Event Stream Hook
+export function useEventStream(runId: string | null) {
+  const [events, setEvents] = useState<TraceEvent[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isDone, setIsDone] = useState(false);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!runId) {
+      setEvents([]);
+      setIsConnected(false);
+      setIsDone(false);
+      return;
+    }
+
+    const eventSource = createEventStream(
+      runId,
+      (message: SSEMessage) => {
+        switch (message.type) {
+          case "trace":
+            setEvents((prev) => [...prev, message.data]);
+            break;
+          case "done":
+            setIsDone(true);
+            setIsConnected(false);
+            // Invalidate queries to fetch final state
+            queryClient.invalidateQueries({ queryKey: ["run", runId] });
+            queryClient.invalidateQueries({ queryKey: ["outputs", runId] });
+            break;
+          case "error":
+            console.error("SSE error:", message.data.error);
+            setIsConnected(false);
+            break;
+        }
+      },
+      (error) => {
+        console.error("SSE connection error:", error);
+        setIsConnected(false);
+      },
+    );
+
+    setIsConnected(true);
+
+    return () => {
+      eventSource.close();
+      setIsConnected(false);
+    };
+  }, [runId, queryClient]);
+
+  return { events, isConnected, isDone };
 }

@@ -22,6 +22,7 @@ import { ConfidenceBar, LoadingPanel, LoadingSkeleton } from "@/components/ui-co
 import {
   useCreateRun,
   useCurrentDecision,
+  useEventStream,
   useOutputs,
   useRun,
   useSubmitDecision,
@@ -89,6 +90,9 @@ export function GuidedWorkbench() {
   const { data: decision, isLoading: isDecisionLoading } = useCurrentDecision(runId);
   const { data: outputs } = useOutputs(runId);
   const submitDecisionMutation = useSubmitDecision(runId ?? "");
+
+  // H5: SSE event stream for real-time progress
+  const { events: traceEvents, isConnected } = useEventStream(runId);
 
   // L9: Focus management refs
   const decisionHeaderRef = useRef<HTMLDivElement>(null);
@@ -260,6 +264,31 @@ export function GuidedWorkbench() {
                   </li>
                 ))}
               </ol>
+
+              {/* H5: Real-time event log */}
+              {traceEvents.length > 0 && (
+                <div className="event-log">
+                  <p className="kicker">实时事件</p>
+                  <div className="event-list">
+                    {traceEvents.slice(-5).map((event, i) => (
+                      <div key={i} className="event-item">
+                        <span className="event-dot" />
+                        <div>
+                          <strong>{event.event}</strong>
+                          <small>{event.summary}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {isConnected && (
+                    <div className="event-status">
+                      <span className="live-dot" />
+                      <small>监听中...</small>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <button className="ghost-button" onClick={reset} type="button">
                 <RotateCcw size={16} />
                 新建任务

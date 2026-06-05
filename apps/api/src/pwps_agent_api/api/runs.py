@@ -1,6 +1,9 @@
-from typing import Annotated
+import asyncio
+import json
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwps_agent_api.db.session import get_session
@@ -85,6 +88,59 @@ async def get_run_events(
     if response is None:
         raise _run_not_found(run_id)
     return response
+
+
+@router.get(
+    "/{run_id}/events/stream",
+    responses={404: {"model": ErrorResponse}},
+)
+async def stream_run_events(
+    run_id: str,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    event_store: Annotated[EventStore, Depends(get_event_store)],
+) -> StreamingResponse:
+    """SSE endpoint for real-time run progress events."""
+
+    async def event_generator() -> Any:
+        service = build_run_service(session, event_store=event_store)
+        if await service.get_run(run_id) is None:
+            yield f"event: error\ndata: {json.dumps({'error': 'RUN_NOT_FOUND'})}\n\n"
+            return
+        service = build_run_service(session, event_store=event_store)
+        if await service.get_run(run_id) is None:
+            yield f"event: error\ndata: {json.dumps({'error': 'RUN_NOT_FOUND'})}\n\n"
+            return
+
+        last_index = 0
+        while True:
+            response = await service.events_response(run_id)
+            if response is None:
+                break
+
+            events = response.events
+            if len(events) > last_index:
+                for event in events[last_index:]:
+                    yield f"event: trace\ndata: {event.model_dump_json()}\n\n"
+                last_index = len(events)
+
+            # Check if run is finished
+            status_response = await service.status_response(run_id)
+            if status_response and status_response.status in ("finished", "blocked"):
+                done_data = json.dumps({"status": status_response.status.value})
+                yield f"event: done\ndata: {done_data}\n\n"
+                break
+
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get(

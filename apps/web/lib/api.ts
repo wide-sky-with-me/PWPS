@@ -125,3 +125,53 @@ export function submitDecision(
 export function fetchOutputs(runId: string): Promise<RunOutputs> {
   return requestJson(`/api/runs/${runId}/outputs`);
 }
+
+// SSE Types
+export type TraceEvent = {
+  event: string;
+  summary: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+export type SSEMessage =
+  | { type: "trace"; data: TraceEvent }
+  | { type: "done"; data: { status: RunStatus } }
+  | { type: "error"; data: { error: string } };
+
+// SSE Event Stream
+export function createEventStream(
+  runId: string,
+  onMessage: (message: SSEMessage) => void,
+  onError?: (error: Event) => void,
+): EventSource {
+  const eventSource = new EventSource(`${API_BASE}/api/runs/${runId}/events/stream`);
+
+  eventSource.addEventListener("trace", (event) => {
+    try {
+      const data = JSON.parse(event.data) as TraceEvent;
+      onMessage({ type: "trace", data });
+    } catch {
+      console.error("Failed to parse trace event:", event.data);
+    }
+  });
+
+  eventSource.addEventListener("done", (event) => {
+    try {
+      const data = JSON.parse(event.data) as { status: RunStatus };
+      onMessage({ type: "done", data });
+      eventSource.close();
+    } catch {
+      console.error("Failed to parse done event:", event.data);
+    }
+  });
+
+  eventSource.addEventListener("error", (event) => {
+    if (onError) {
+      onError(event);
+    }
+    eventSource.close();
+  });
+
+  return eventSource;
+}

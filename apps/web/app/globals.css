@@ -653,6 +653,78 @@ textarea::placeholder {
 }
 
 /* ============================================
+   Event Log (SSE)
+   ============================================ */
+
+.event-log {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  margin-top: 12px;
+}
+
+.event-log .kicker {
+  margin-bottom: 4px;
+}
+
+.event-list {
+  display: grid;
+  gap: 8px;
+}
+
+.event-item {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+.event-dot {
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 6px;
+  margin-top: 6px;
+  width: 6px;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.event-item div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.event-item strong {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.event-item small {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.event-status {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.event-status small {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* ============================================
    Decision Column
    ============================================ */
 

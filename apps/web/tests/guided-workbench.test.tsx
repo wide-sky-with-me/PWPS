@@ -11,6 +11,10 @@ vi.mock("../lib/api", () => ({
   fetchCurrentDecision: vi.fn(),
   submitDecision: vi.fn(),
   fetchOutputs: vi.fn(),
+  createEventStream: vi.fn(() => ({
+    addEventListener: vi.fn(),
+    close: vi.fn(),
+  })),
 }));
 
 import { createRun, fetchRun, fetchCurrentDecision, submitDecision, fetchOutputs } from "../lib/api";
