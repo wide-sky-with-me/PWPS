@@ -3,17 +3,26 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pwps_agent_api.core.config import Settings, get_settings
 from pwps_agent_api.db.models import RunRecord
 from pwps_agent_api.events import EventStore
-from pwps_agent_api.schemas import Mode, PendingUserDecision, Publishability, WorkflowState
+from pwps_agent_api.schemas import (
+    Mode,
+    PendingUserDecision,
+    Publishability,
+    RunStatus,
+    WorkflowState,
+)
 from pwps_agent_api.schemas.api import (
     CreateRunRequest,
     CreateRunResponse,
     CurrentDecisionResponse,
+    ListRunsResponse,
     RunEventsResponse,
+    RunListItem,
     RunOutputsResponse,
     RunProgress,
     RunStatusResponse,
@@ -77,6 +86,52 @@ class RunService:
 
     async def get_run(self, run_id: str) -> RunRecord | None:
         return await self.session.get(RunRecord, run_id)
+
+    async def list_runs(
+        self, limit: int = 50, offset: int = 0
+    ) -> ListRunsResponse:
+        # Get total count
+        count_stmt = select(func.count()).select_from(RunRecord)
+        total_result = await self.session.execute(count_stmt)
+        total = total_result.scalar() or 0
+
+        # Get runs with pagination
+        stmt = (
+            select(RunRecord)
+            .order_by(RunRecord.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        records = result.scalars().all()
+
+        runs = []
+        for record in records:
+            # Extract publishability from outputs if available
+            publishability = None
+            if record.outputs_json:
+                risk_report = record.outputs_json.get("risk_report", {})
+                if risk_report:
+                    pub_value = risk_report.get("publishability")
+                    if pub_value:
+                        try:
+                            publishability = Publishability(pub_value)
+                        except ValueError:
+                            pass
+
+            runs.append(
+                RunListItem(
+                    run_id=record.run_id,
+                    status=RunStatus(record.status),
+                    mode=Mode(record.mode) if record.mode else None,
+                    raw_input=record.raw_input,
+                    created_at=record.created_at.isoformat() if record.created_at else "",
+                    updated_at=record.updated_at.isoformat() if record.updated_at else "",
+                    publishability=publishability,
+                )
+            )
+
+        return ListRunsResponse(runs=runs, total=total)
 
     async def status_response(self, run_id: str) -> RunStatusResponse | None:
         record = await self.get_run(run_id)

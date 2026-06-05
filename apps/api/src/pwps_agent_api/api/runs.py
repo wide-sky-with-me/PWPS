@@ -14,6 +14,7 @@ from pwps_agent_api.schemas.api import (
     CreateRunResponse,
     CurrentDecisionResponse,
     ErrorResponse,
+    ListRunsResponse,
     RunEventsResponse,
     RunOutputsResponse,
     RunStatusResponse,
@@ -29,6 +30,16 @@ class RunApiError(Exception):
     def __init__(self, *, status_code: int, error: ErrorResponse) -> None:
         self.status_code = status_code
         self.error = error
+
+
+@router.get("", response_model=ListRunsResponse)
+async def list_runs(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    limit: int = 50,
+    offset: int = 0,
+) -> ListRunsResponse:
+    service = build_run_service(session)
+    return await service.list_runs(limit=limit, offset=offset)
 
 
 @router.post("", response_model=CreateRunResponse)

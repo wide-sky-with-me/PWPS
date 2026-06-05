@@ -84,3 +84,22 @@ class ErrorResponse(BaseModel):
     error_code: str
     message: str
     details: dict[str, Any] = Field(default_factory=dict)
+
+
+class RunListItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str
+    status: RunStatus
+    mode: Mode | None
+    raw_input: str
+    created_at: str
+    updated_at: str
+    publishability: Publishability | None = None
+
+
+class ListRunsResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    runs: list[RunListItem]
+    total: int

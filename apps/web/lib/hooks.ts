@@ -7,12 +7,20 @@ import {
   createRun,
   fetchCurrentDecision,
   fetchOutputs,
+  fetchRuns,
   fetchRun,
   submitDecision,
   type Mode,
   type SSEMessage,
   type TraceEvent,
 } from "./api";
+
+export function useRuns(limit = 50, offset = 0) {
+  return useQuery({
+    queryKey: ["runs", limit, offset],
+    queryFn: () => fetchRuns(limit, offset),
+  });
+}
 
 export function useCreateRun() {
   const queryClient = useQueryClient();

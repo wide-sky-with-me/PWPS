@@ -7,9 +7,11 @@ import {
   ClipboardList,
   Database,
   FileJson,
+  History,
   LoaderCircle,
   Play,
   RotateCcw,
+  Settings,
   ShieldAlert,
   Zap,
 } from "lucide-react";
@@ -77,10 +79,18 @@ function valuesEqual(a: unknown, b: unknown): boolean {
   return false;
 }
 
-export function GuidedWorkbench() {
+export function GuidedWorkbench({
+  onShowHistory,
+  onShowSettings,
+  initialRunId,
+}: {
+  onShowHistory?: () => void;
+  onShowSettings?: () => void;
+  initialRunId?: string | null;
+} = {}) {
   const [mode, setMode] = useState<Mode>("guided");
   const [input, setInput] = useState(sampleInput);
-  const [runId, setRunId] = useState<string | null>(null);
+  const [runId, setRunId] = useState<string | null>(initialRunId ?? null);
   const [error, setError] = useState<string | null>(null);
   const [selectedValues, setSelectedValues] = useState<Record<string, unknown>>({});
 
@@ -189,9 +199,31 @@ export function GuidedWorkbench() {
               <span>焊接工艺草案确认工作台</span>
             </div>
           </div>
-          <div className="system-state">
-            <span className="live-dot" />
-            Draft workflow
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            {onShowHistory && (
+              <button
+                className="ghost-button"
+                onClick={onShowHistory}
+                style={{ width: "auto", minHeight: "36px", padding: "6px 12px" }}
+              >
+                <History size={16} />
+                历史
+              </button>
+            )}
+            {onShowSettings && (
+              <button
+                className="ghost-button"
+                onClick={onShowSettings}
+                style={{ width: "auto", minHeight: "36px", padding: "6px 12px" }}
+              >
+                <Settings size={16} />
+                设置
+              </button>
+            )}
+            <div className="system-state">
+              <span className="live-dot" />
+              Draft workflow
+            </div>
           </div>
         </header>
 

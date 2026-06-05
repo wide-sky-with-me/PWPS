@@ -126,6 +126,26 @@ export function fetchOutputs(runId: string): Promise<RunOutputs> {
   return requestJson(`/api/runs/${runId}/outputs`);
 }
 
+// List runs
+export type RunListItem = {
+  run_id: string;
+  status: RunStatus;
+  mode: Mode | null;
+  raw_input: string;
+  created_at: string;
+  updated_at: string;
+  publishability: string | null;
+};
+
+export type ListRunsResponse = {
+  runs: RunListItem[];
+  total: number;
+};
+
+export function fetchRuns(limit = 50, offset = 0): Promise<ListRunsResponse> {
+  return requestJson(`/api/runs?limit=${limit}&offset=${offset}`);
+}
+
 // SSE Types
 export type TraceEvent = {
   event: string;
